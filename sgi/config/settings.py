@@ -1,6 +1,9 @@
 import os
 import dj_database_url
 from pathlib import Path
+from dotenv import load_dotenv
+env_path = Path(__file__).resolve().parents[2] / '.env'
+load_dotenv(dotenv_path=env_path)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -92,18 +95,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATIC_ROOT.mkdir(parents=True, exist_ok=True)  # Garantiza que el dir exista → sin warning de WhiteNoise
-
-# STATICFILES_DIRS vacío: AppDirectoriesFinder ya encuentra app/static/ vía INSTALLED_APPS.
-# Dejarlo con la ruta causaba el warning "Found another file with the destination path".
-STATICFILES_DIRS = []
-
-# Desarrollo (runserver): storage por defecto, sirve directo desde app/static/.
-# Producción (Railway):   WhiteNoise con compresión gzip/brotli.
-if DEBUG:
-    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-else:
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+STATICFILES_DIRS = [BASE_DIR / 'app' / 'static']
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
