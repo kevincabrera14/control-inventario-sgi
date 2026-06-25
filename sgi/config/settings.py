@@ -96,6 +96,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT.mkdir(parents=True, exist_ok=True)  # Crea el dir si no existe → elimina el warning de WhiteNoise
 
 # Solo incluye la carpeta fuente si existe (evita el warning de WhiteNoise).
 _app_static = BASE_DIR / 'app' / 'static'
