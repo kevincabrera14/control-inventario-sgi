@@ -1,0 +1,44 @@
+<hr class="my-5 border-secondary">
+        <h4 class="mb-3">Últimos Movimientos Registrados</h4>
+        <div class="table-responsive glass-card p-3">
+            <table class="table table-sm table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Producto</th>
+                        <th>Tipo</th>
+                        <th>Cantidad</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mov in ultimos_movimientos %}
+                    <tr>
+                        <td>{{ mov.fecha|date:"d/m/Y H:i" }}</td>
+                        <td>{{ mov.producto.nombre }}</td>
+                        <td>
+                            {% if mov.tipo == 'E' %}<span class="badge bg-success">Entrada</span>
+                            {% elif mov.tipo == 'S' %}<span class="badge bg-danger">Salida</span>
+                            {% else %}<span class="badge bg-warning">Ajuste</span>{% endif %}
+                        </td>
+                        <td>{{ mov.cantidad }}</td>
+                        <td>
+                            {% if mov.tipo == 'S' %}
+                            <button class="btn btn-sm btn-outline-danger" onclick="revertirVenta({{ mov.id }})"
+                                title="Revertir y devolver stock">
+                                <i class="fas fa-undo"></i> Revertir
+                            </button>
+                            {% else %}
+                            <span class="text-muted small">N/A</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5">Sin movimientos.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>

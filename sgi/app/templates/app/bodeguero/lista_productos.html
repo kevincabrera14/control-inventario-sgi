@@ -1,0 +1,235 @@
+{% extends 'app/base.html' %}
+{% load static humanize %}
+
+{% block title %}Lista de Productos{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <!-- Encabezado -->
+    <div class="row mb-4 align-items-center g-3">
+        <div class="col-12 col-md-5">
+            <h2 class="mb-0">
+                <i class="fas fa-boxes me-2 text-primary"></i>Lista de Productos
+            </h2>
+            <small class="text-muted">{{ total_productos|intcomma }} producto{{ total_productos|pluralize }} encontrado{{ total_productos|pluralize }}</small>
+        </div>
+        <div class="col-12 col-md-7 d-flex gap-2 justify-content-md-end flex-wrap">
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Volver al POS
+            </a>
+            <a href="{% url 'producto-create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> Nuevo Producto
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-12 col-md-4">
+                    <label class="form-label fw-semibold small">Buscar</label>
+                    <input type="text" name="search" class="form-control"
+                           placeholder="Nombre o código de barras..."
+                           value="{{ search }}">
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label fw-semibold small">Categoría</label>
+                    <select name="categoria" class="form-select">
+                        <option value="">Todas las categorías</option>
+                        {% for cat in categorias %}
+                        <option value="{{ cat.pk }}" {% if categoria_seleccionada == cat.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ cat.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label fw-semibold small">Estado de stock</label>
+                    <select name="stock" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="bajo" {% if stock_filtro == 'bajo' %}selected{% endif %}>Stock bajo</option>
+                        <option value="sin"  {% if stock_filtro == 'sin'  %}selected{% endif %}>Sin stock</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-1"></i> Filtrar
+                    </button>
+                    <a href="{% url 'bodeguero-lista-productos' %}" class="btn btn-outline-secondary" title="Limpiar filtros">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de productos -->
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Producto</th>
+                        <th>Categoría</th>
+                        <th>Código</th>
+                        <th class="text-end">Precio Venta</th>
+                        <th class="text-center">Stock</th>
+                        <th class="text-center">Estado</th>
+                        <th class="text-center pe-3">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for producto in page_obj %}
+                    <tr>
+                        <td class="ps-3">
+                            <div class="fw-semibold">{{ producto.nombre }}</div>
+                            {% if producto.proveedor %}
+                            <small class="text-muted">{{ producto.proveedor.nombre }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if producto.categoria %}
+                            <span class="badge bg-secondary bg-opacity-25 text-dark">{{ producto.categoria.nombre }}</span>
+                            {% else %}
+                            <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if producto.codigo_barras %}
+                            <code class="small">{{ producto.codigo_barras }}</code>
+                            {% else %}
+                            <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end fw-semibold">${{ producto.precio_venta|floatformat:0|intcomma }}</td>
+                        <td class="text-center">
+                            <span class="fw-bold {% if producto.stock_bajo %}text-danger{% else %}text-success{% endif %}">
+                                {{ producto.stock_actual|floatformat:"-2"|intcomma }}
+                            </span>
+                            <small class="text-muted d-block">mín: {{ producto.stock_minimo|floatformat:"-2"|intcomma }}</small>
+                        </td>
+                        <td class="text-center">
+                            {% if producto.stock_actual == 0 %}
+                                <span class="badge bg-danger">Sin stock</span>
+                            {% elif producto.stock_bajo %}
+                                <span class="badge bg-warning text-dark">Stock bajo</span>
+                            {% else %}
+                                <span class="badge bg-success">OK</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center pe-3">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <!-- Entrada rápida de stock -->
+                                <a href="{% url 'entrada-create' %}?producto_id={{ producto.pk }}"
+                                   class="btn btn-outline-success" title="Registrar entrada de stock">
+                                    <i class="fas fa-plus"></i>
+                                </a>
+                                <!-- Editar producto -->
+                                <a href="{% url 'producto-update' producto.pk %}"
+                                   class="btn btn-outline-primary" title="Editar producto">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <!-- Ver detalle -->
+                                <a href="{% url 'producto-detail' producto.pk %}"
+                                   class="btn btn-outline-secondary" title="Ver detalle e historial">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <!-- Eliminar (soft delete) -->
+                                <button type="button" class="btn btn-outline-danger"
+                                        title="Desactivar producto"
+                                        onclick="confirmarEliminacion({{ producto.pk }}, '{{ producto.nombre|escapejs }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="fas fa-box-open fa-2x mb-2 d-block"></i>
+                            No se encontraron productos con los filtros actuales.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        {% if page_obj.has_other_pages %}
+        <div class="card-footer d-flex justify-content-between align-items-center">
+            <small class="text-muted">
+                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+            </small>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}&search={{ search }}&categoria={{ categoria_seleccionada }}&stock={{ stock_filtro }}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}&search={{ search }}&categoria={{ categoria_seleccionada }}&stock={{ stock_filtro }}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}&search={{ search }}&categoria={{ categoria_seleccionada }}&stock={{ stock_filtro }}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de confirmación de eliminación -->
+<div class="modal fade" id="modalEliminar" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Desactivar producto
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas desactivar el producto <strong id="nombreProducto"></strong>?</p>
+                <p class="text-muted small mb-0">El producto no se eliminará permanentemente, solo dejará de aparecer en el sistema.</p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="formEliminar" method="post" action="">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>Sí, desactivar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function confirmarEliminacion(pk, nombre) {
+        document.getElementById('nombreProducto').textContent = nombre;
+        document.getElementById('formEliminar').action = `/producto/${pk}/eliminar/`;
+        const modal = new bootstrap.Modal(document.getElementById('modalEliminar'));
+        modal.show();
+    }
+</script>
+{% endblock %}

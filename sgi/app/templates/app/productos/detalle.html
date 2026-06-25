@@ -1,0 +1,30 @@
+{% extends 'app/base.html' %}
+{% load humanize %}
+{% block title %}Detalle de {{ producto.nombre }}{% endblock %}
+{% block content %}
+<h2>{{ producto.nombre }}</h2>
+<p><strong>Código:</strong> {{ producto.codigo_barras }}</p>
+<p><strong>Categoría:</strong> {{ producto.categoria.nombre|default:"" }}</p>
+<p><strong>Precio de Venta:</strong> {{ producto.precio_venta|floatformat:2|intcomma }}</p>
+<p><strong>Stock:</strong> {{ producto.stock_actual|intcomma }}</p>
+
+<h3>Últimos Movimientos</h3>
+<table class="table table-sm">
+  <thead>
+    <tr><th>Fecha</th><th>Tipo</th><th>Cantidad</th><th>Stock Antes</th><th>Stock Después</th></tr>
+  </thead>
+  <tbody>
+    {% for mov in ultimos_movimientos %}
+    <tr>
+        <td>{{ mov.fecha }}</td>
+        <td>{{ mov.get_tipo_display }}</td>
+        <td>{{ mov.cantidad }}</td>
+        <td>{{ mov.stock_antes }}</td>
+        <td>{{ mov.stock_despues }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5">Sin movimientos.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

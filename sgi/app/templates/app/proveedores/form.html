@@ -1,0 +1,10 @@
+{% extends 'app/base.html' %}
+{% block title %}{% if view.object %}Editar Proveedor{% else %}Nuevo Proveedor{% endif %}{% endblock %}
+{% block content %}
+<h2>{% if view.object %}Editar Proveedor{% else %}Nuevo Proveedor{% endif %}</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Guardar</button>
+</form>
+{% endblock %}

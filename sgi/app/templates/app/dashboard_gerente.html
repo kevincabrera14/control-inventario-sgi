@@ -1,0 +1,309 @@
+{% extends 'app/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Dashboard Gerente{% endblock %}
+
+{% block content %}
+<div class="container-fluid pt-3 px-3 px-md-4">
+
+    {# ── ENCABEZADO ─────────────────────────────────────────────────── #}
+    <div class="d-flex justify-content-between align-items-start mb-4 gap-2">
+        <div>
+            <h2 class="mb-0 fw-bold" style="color:var(--color-text)">Resumen Gerencial</h2>
+            <p class="small mb-0" style="color:var(--color-muted)">
+                Panel de supervisión · {{ request.user.perfil.negocio.nombre }}
+            </p>
+        </div>
+
+        {# ── MENÚ DE ACCIONES ──────────────────────────────────────── #}
+        <div class="dropdown flex-shrink-0">
+            <button class="btn btn-primary dropdown-toggle shadow-sm px-3" type="button"
+                    id="menuGerente" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-sliders-h me-1"></i>
+                <span class="d-none d-sm-inline">Acciones</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-lg" style="min-width:260px;"
+                aria-labelledby="menuGerente">
+
+                <li><h6 class="dropdown-header text-uppercase small">📊 Análisis</h6></li>
+                <li>
+                    <a class="dropdown-item py-2" href="{% url 'gerente-historial-financiero' %}">
+                        <i class="fas fa-chart-bar text-info me-2"></i>
+                        Historial Financiero
+                        <small class="d-block text-muted" style="font-size:11px">Ventas, compras y flujo de caja</small>
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item py-2" href="{% url 'gerente-utilidades' %}">
+                        <i class="fas fa-chart-line text-success me-2"></i>
+                        Utilidades y Proyecciones
+                        <small class="d-block text-muted" style="font-size:11px">Margen bruto y simulaciones</small>
+                    </a>
+                </li>
+
+                <li><hr class="dropdown-divider"></li>
+                <li><h6 class="dropdown-header text-uppercase small">📦 Inventario</h6></li>
+                <li>
+                    <a class="dropdown-item py-2" href="{% url 'gerente-stock-productos' %}">
+                        <i class="fas fa-boxes text-warning me-2"></i>
+                        Stock y Productos
+                        <small class="d-block text-muted" style="font-size:11px">Ver, crear y editar productos</small>
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item py-2" href="{% url 'historial-movimientos' %}">
+                        <i class="fas fa-history me-2" style="color:var(--color-muted)"></i>
+                        Historial General
+                        <small class="d-block text-muted" style="font-size:11px">Todos los movimientos de inventario</small>
+                    </a>
+                </li>
+
+                <li><hr class="dropdown-divider"></li>
+                <li><h6 class="dropdown-header text-uppercase small">⬇️ Exportar</h6></li>
+                <li>
+                    <a class="dropdown-item" href="{% url 'reporte-inventario-excel' %}">
+                        <i class="fas fa-file-excel text-success me-2"></i> Inventario (Excel)
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{% url 'reporte-inventario-pdf' %}" target="_blank">
+                        <i class="fas fa-file-pdf text-danger me-2"></i> Inventario (PDF)
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{% url 'reporte-stock-bajo-pdf' %}" target="_blank">
+                        <i class="fas fa-exclamation-triangle text-warning me-2"></i> Stock Bajo (PDF)
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    {# ── KPIs PRINCIPALES ───────────────────────────────────────────── #}
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="glass-card p-3 h-100 border-0 shadow-sm position-relative overflow-hidden">
+                <div class="position-absolute top-0 start-0 h-100" style="width:4px;background:#6366f1;border-radius:4px 0 0 4px"></div>
+                <p class="small mb-1 ps-2 text-uppercase fw-semibold" style="font-size:10px;letter-spacing:.06em;color:var(--color-muted)">Total Productos</p>
+                <h3 class="mb-0 ps-2 fw-bold" style="color:var(--color-text)">{{ total_productos }}</h3>
+                <i class="fas fa-boxes position-absolute" style="right:12px;bottom:8px;font-size:2rem;opacity:.06;color:var(--color-accent)"></i>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="glass-card p-3 h-100 border-0 shadow-sm position-relative overflow-hidden">
+                <div class="position-absolute top-0 start-0 h-100" style="width:4px;background:#d97706;border-radius:4px 0 0 4px"></div>
+                <p class="small mb-1 ps-2 text-uppercase fw-semibold" style="font-size:10px;letter-spacing:.06em;color:var(--color-muted)">Stock Bajo</p>
+                <h3 class="mb-0 ps-2 fw-bold" style="color:#d97706">{{ productos_stock_bajo|length }}</h3>
+                <i class="fas fa-exclamation-triangle position-absolute" style="right:12px;bottom:8px;font-size:2rem;opacity:.06;color:#d97706"></i>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <a href="{% url 'gerente-historial-financiero' %}" class="text-decoration-none">
+                <div class="glass-card p-3 h-100 border-0 shadow-sm position-relative overflow-hidden" style="cursor:pointer">
+                    <div class="position-absolute top-0 start-0 h-100" style="width:4px;background:#16a34a;border-radius:4px 0 0 4px"></div>
+                    <p class="small mb-1 ps-2 text-uppercase fw-semibold" style="font-size:10px;letter-spacing:.06em;color:var(--color-muted)">Historial Financiero</p>
+                    <p class="mb-0 ps-2 small fw-semibold" style="color:var(--color-accent)">Ver flujo del mes →</p>
+                    <i class="fas fa-chart-bar position-absolute" style="right:12px;bottom:8px;font-size:2rem;opacity:.06;color:#16a34a"></i>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-lg-3">
+            <a href="{% url 'gerente-utilidades' %}" class="text-decoration-none">
+                <div class="glass-card p-3 h-100 border-0 shadow-sm position-relative overflow-hidden" style="cursor:pointer">
+                    <div class="position-absolute top-0 start-0 h-100" style="width:4px;background:#7c3aed;border-radius:4px 0 0 4px"></div>
+                    <p class="small mb-1 ps-2 text-uppercase fw-semibold" style="font-size:10px;letter-spacing:.06em;color:var(--color-muted)">Proyecciones</p>
+                    <p class="mb-0 ps-2 small fw-semibold" style="color:var(--color-accent)">Simular utilidades →</p>
+                    <i class="fas fa-chart-line position-absolute" style="right:12px;bottom:8px;font-size:2rem;opacity:.06;color:#7c3aed"></i>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    {# ── ALERTA STOCK BAJO ──────────────────────────────────────────── #}
+    {% if productos_stock_bajo %}
+    <div class="alert border-0 mb-4 d-flex align-items-center gap-3"
+         style="background:rgba(217,119,6,.10);border-left:4px solid #d97706 !important;border-radius:8px">
+        <i class="fas fa-exclamation-triangle fa-lg" style="color:#d97706"></i>
+        <div>
+            <strong style="color:#92400e">{{ productos_stock_bajo|length }} producto(s) con stock bajo.</strong>
+            <a href="{% url 'gerente-stock-productos' %}?stock=bajo" class="ms-2 fw-semibold" style="font-size:.9em;color:#d97706">Ver listado →</a>
+        </div>
+    </div>
+    {% endif %}
+
+    {# ── FILTRO DE HISTORIAL ────────────────────────────────────────── #}
+    <div class="glass-card p-3 p-md-4 mb-4">
+        <h6 class="mb-3 fw-bold" style="color:var(--color-text)">
+            <i class="fas fa-filter me-2" style="color:var(--color-accent)"></i>Consultar Historial por Rango
+        </h6>
+        <form action="{% url 'historial-movimientos' %}" method="GET" class="row g-2 align-items-end">
+            <div class="col-12 col-md-4">
+                <label class="form-label small fw-semibold mb-1" style="color:var(--color-muted)">Desde</label>
+                <input type="date" name="fecha_desde" class="form-control form-control-sm" value="{{ request.GET.fecha_desde }}">
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label small fw-semibold mb-1" style="color:var(--color-muted)">Hasta</label>
+                <input type="date" name="fecha_hasta" class="form-control form-control-sm" value="{{ request.GET.fecha_hasta }}">
+            </div>
+            <div class="col-12 col-md-4">
+                <button type="submit" class="btn btn-primary btn-sm w-100">
+                    <i class="fas fa-search me-1"></i> Ver Historial
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {# ── ACCESOS RÁPIDOS ────────────────────────────────────────────── #}
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <h6 class="text-uppercase mb-0" style="font-size:10px;letter-spacing:.08em;color:var(--color-muted)">Accesos Rápidos</h6>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{% url 'gerente-historial-financiero' %}" class="text-decoration-none">
+                <div class="glass-card p-3 text-center border-0 shadow-sm h-100"
+                     style="border-top:3px solid #0ea5e9 !important;border-radius:10px;transition:.2s"
+                     onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                    <i class="fas fa-chart-bar fa-2x mb-2" style="color:#0ea5e9"></i>
+                    <p class="mb-0 small fw-semibold" style="color:var(--color-text)">Historial<br>Financiero</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{% url 'gerente-stock-productos' %}" class="text-decoration-none">
+                <div class="glass-card p-3 text-center border-0 shadow-sm h-100"
+                     style="border-top:3px solid #d97706 !important;border-radius:10px;transition:.2s"
+                     onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                    <i class="fas fa-boxes fa-2x mb-2" style="color:#d97706"></i>
+                    <p class="mb-0 small fw-semibold" style="color:var(--color-text)">Stock y<br>Productos</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{% url 'gerente-utilidades' %}" class="text-decoration-none">
+                <div class="glass-card p-3 text-center border-0 shadow-sm h-100"
+                     style="border-top:3px solid #7c3aed !important;border-radius:10px;transition:.2s"
+                     onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                    <i class="fas fa-chart-line fa-2x mb-2" style="color:#7c3aed"></i>
+                    <p class="mb-0 small fw-semibold" style="color:var(--color-text)">Utilidades y<br>Proyecciones</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{% url 'historial-movimientos' %}" class="text-decoration-none">
+                <div class="glass-card p-3 text-center border-0 shadow-sm h-100"
+                     style="border-top:3px solid #6b7280 !important;border-radius:10px;transition:.2s"
+                     onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                    <i class="fas fa-history fa-2x mb-2" style="color:#6b7280"></i>
+                    <p class="mb-0 small fw-semibold" style="color:var(--color-text)">Historial<br>General</p>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    {# ── ÚLTIMOS MOVIMIENTOS ────────────────────────────────────────── #}
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0 fw-bold" style="color:var(--color-text)">Últimas Acciones</h5>
+        <a href="{% url 'historial-movimientos' %}" class="btn btn-sm btn-secondary">Ver todo</a>
+    </div>
+
+    {# MÓVIL: lista de cards (visible solo en xs/sm) #}
+    <div class="d-lg-none mb-4">
+        {% for mov in ultimos_movimientos %}
+        <div class="glass-card p-3 mb-2 border-0 shadow-sm">
+            <div class="d-flex justify-content-between align-items-start mb-1">
+                <span class="fw-semibold small" style="color:var(--color-text)">{{ mov.producto.nombre }}</span>
+                {% if mov.tipo == 'E' %}
+                    <span class="badge rounded-pill" style="background:rgba(22,163,74,.15);color:#15803d;border:1px solid rgba(22,163,74,.3)">↑ Entrada</span>
+                {% elif mov.tipo == 'S' %}
+                    <span class="badge rounded-pill" style="background:rgba(220,38,38,.12);color:#dc2626;border:1px solid rgba(220,38,38,.3)">↓ Salida</span>
+                {% else %}
+                    <span class="badge rounded-pill" style="background:rgba(217,119,6,.15);color:#d97706;border:1px solid rgba(217,119,6,.3)">⟳ Ajuste</span>
+                {% endif %}
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="small" style="color:var(--color-muted)">{{ mov.fecha|date:"d/m/Y H:i" }}</span>
+                    <span class="small ms-2" style="color:var(--color-muted)">· {{ mov.usuario.username }}</span>
+                    <span class="small ms-2 fw-semibold" style="color:var(--color-text)">× {{ mov.cantidad }}</span>
+                </div>
+                {% if mov.tipo == 'S' %}
+                <button class="btn btn-sm" style="font-size:11px;color:#dc2626;border:1px solid rgba(220,38,38,.4);border-radius:6px;padding:.2rem .6rem"
+                        onclick="revertirVenta({{ mov.id }})">
+                    <i class="fas fa-undo me-1"></i>Revertir
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="glass-card p-4 text-center" style="color:var(--color-muted)">No se han registrado movimientos.</div>
+        {% endfor %}
+    </div>
+
+    {# DESKTOP: tabla tradicional (visible solo en lg+) #}
+    <div class="d-none d-lg-block table-responsive glass-card p-0 overflow-hidden shadow-sm mb-4">
+        <table class="table mb-0 align-middle">
+            <thead style="background:rgba(124,58,237,.1);font-size:11px;text-transform:uppercase;letter-spacing:.05em">
+                <tr>
+                    <th class="ps-4 py-3" style="color:var(--color-muted)">Fecha</th>
+                    <th class="py-3" style="color:var(--color-muted)">Producto</th>
+                    <th class="py-3" style="color:var(--color-muted)">Tipo</th>
+                    <th class="py-3" style="color:var(--color-muted)">Cantidad</th>
+                    <th class="py-3" style="color:var(--color-muted)">Usuario</th>
+                    <th class="pe-4 py-3 text-end" style="color:var(--color-muted)">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mov in ultimos_movimientos %}
+                <tr style="border-bottom:1px solid rgba(124,58,237,.1)">
+                    <td class="ps-4 small" style="color:var(--color-muted);white-space:nowrap">{{ mov.fecha|date:"d/m/Y H:i" }}</td>
+                    <td class="fw-semibold" style="color:var(--color-text)">{{ mov.producto.nombre }}</td>
+                    <td>
+                        {% if mov.tipo == 'E' %}
+                            <span class="badge rounded-pill" style="background:rgba(22,163,74,.15);color:#15803d;border:1px solid rgba(22,163,74,.3)">↑ Entrada</span>
+                        {% elif mov.tipo == 'S' %}
+                            <span class="badge rounded-pill" style="background:rgba(220,38,38,.12);color:#dc2626;border:1px solid rgba(220,38,38,.3)">↓ Salida</span>
+                        {% else %}
+                            <span class="badge rounded-pill" style="background:rgba(217,119,6,.15);color:#d97706;border:1px solid rgba(217,119,6,.3)">⟳ Ajuste</span>
+                        {% endif %}
+                    </td>
+                    <td style="color:var(--color-text)">{{ mov.cantidad }}</td>
+                    <td class="small" style="color:var(--color-muted)">{{ mov.usuario.username }}</td>
+                    <td class="pe-4 text-end">
+                        {% if mov.tipo == 'S' %}
+                        <button class="btn btn-sm" style="font-size:12px;color:#dc2626;border:1px solid rgba(220,38,38,.4);border-radius:6px"
+                                onclick="revertirVenta({{ mov.id }})">
+                            <i class="fas fa-undo me-1"></i>Revertir
+                        </button>
+                        {% else %}
+                        <span style="color:var(--color-muted)">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center py-5" style="color:var(--color-muted)">No se han registrado movimientos.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function revertirVenta(movId) {
+    if (!confirm('¿Confirmar reversión de este movimiento? El stock será restaurado automáticamente.')) return;
+    fetch(`/revertir-movimiento/${movId}/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') { alert(data.message); location.reload(); }
+        else alert('Error: ' + data.message);
+    })
+    .catch(() => alert('Error de conexión con el servidor.'));
+}
+</script>
+{% endblock %}

@@ -1,0 +1,260 @@
+{% extends 'app/base.html' %}
+{% load static humanize %}
+
+{% block title %}Reportes de Ventas{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <!-- Encabezado -->
+    <div class="row mb-4 align-items-center g-3">
+        <div class="col-12 col-md-5">
+            <h2 class="mb-0">
+                <i class="fas fa-chart-bar me-2 text-primary"></i>Reporte de Ventas
+            </h2>
+            <small class="text-muted">Historial de salidas agrupado por día</small>
+        </div>
+        <div class="col-12 col-md-7 text-md-end">
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Volver al POS
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtro de fechas -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-12 col-md-4">
+                    <label class="form-label fw-semibold small">Desde</label>
+                    <input type="date" name="fecha_desde" class="form-control" value="{{ fecha_desde }}">
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label fw-semibold small">Hasta</label>
+                    <input type="date" name="fecha_hasta" class="form-control" value="{{ fecha_hasta }}">
+                </div>
+                <div class="col-12 col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-1"></i> Aplicar
+                    </button>
+                    <a href="{% url 'bodeguero-reportes-ventas' %}" class="btn btn-outline-secondary" title="Últimos 30 días">
+                        <i class="fas fa-redo"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tarjetas de resumen -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm text-center h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-primary">{{ total_ventas_periodo|intcomma }}</div>
+                    <div class="text-muted small">Movimientos totales</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm text-center h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-success">{{ total_unidades_periodo|floatformat:"0"|intcomma }}</div>
+                    <div class="text-muted small">Unidades despachadas</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm text-center h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-warning">{{ dias_con_ventas|intcomma }}</div>
+                    <div class="text-muted small">Días con actividad</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fw-semibold small text-muted mb-2">
+                        <i class="fas fa-trophy text-warning me-1"></i>Top productos
+                    </div>
+                    {% for tp in top_productos %}
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-truncate me-2" style="max-width: 130px;" title="{{ tp.producto__nombre }}">
+                            {{ tp.producto__nombre }}
+                        </small>
+                        <span class="badge bg-primary rounded-pill">{{ tp.total_vendido|floatformat:"0"|intcomma }}</span>
+                    </div>
+                    {% empty %}
+                    <small class="text-muted">Sin datos en el período</small>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historial por día (acordeón) -->
+    {% if dias_lista %}
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span class="fw-semibold">
+                <i class="fas fa-calendar-alt me-2"></i>Detalle por día
+            </span>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-secondary" onclick="expandirTodos()">
+                    <i class="fas fa-expand-alt me-1"></i>Expandir todo
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="colapsarTodos()">
+                    <i class="fas fa-compress-alt me-1"></i>Colapsar todo
+                </button>
+            </div>
+        </div>
+
+        <div class="accordion accordion-flush" id="acordeonVentas">
+            {% for dia in dias_lista %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="heading-{{ forloop.counter }}">
+                    <button class="accordion-button {% if not forloop.first %}collapsed{% endif %} py-3"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#collapse-{{ forloop.counter }}"
+                            aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}">
+                        <div class="d-flex align-items-center gap-3 w-100 me-3">
+                            <!-- Fecha -->
+                            <div>
+                                <span class="fw-bold">
+                                    {{ dia.fecha|date:"l" }},
+                                    {{ dia.fecha|date:"d \d\e F \d\e Y" }}
+                                </span>
+                            </div>
+                            <!-- Separador visual -->
+                            <div class="ms-auto d-flex gap-3 text-end flex-shrink-0">
+                                <div>
+                                    <span class="badge bg-primary rounded-pill">
+                                        {{ dia.total_items|intcomma }} mov.
+                                    </span>
+                                </div>
+                                <div>
+                                    <span class="badge bg-danger rounded-pill">
+                                        {{ dia.total_unidades|floatformat:"0"|intcomma }} uds.
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </button>
+                </h2>
+                <div id="collapse-{{ forloop.counter }}"
+                     class="accordion-collapse collapse {% if forloop.first %}show{% endif %}"
+                     data-bs-parent="">
+                    <div class="accordion-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-4">Hora</th>
+                                        <th>Producto</th>
+                                        <th class="text-center">Cantidad</th>
+                                        <th class="text-center">Stock antes</th>
+                                        <th class="text-center">Stock después</th>
+                                        <th>Referencia</th>
+                                        <th>Usuario</th>
+                                        <th class="pe-4 text-center">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for mov in dia.movimientos %}
+                                    <tr>
+                                        <td class="ps-4 text-muted small">{{ mov.fecha|date:"H:i" }}</td>
+                                        <td class="fw-semibold">{{ mov.producto.nombre }}</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-danger">- {{ mov.cantidad|floatformat:"-2"|intcomma }}</span>
+                                        </td>
+                                        <td class="text-center text-muted small">{{ mov.stock_antes|floatformat:"-2"|intcomma }}</td>
+                                        <td class="text-center text-muted small">{{ mov.stock_despues|floatformat:"-2"|intcomma }}</td>
+                                        <td class="small text-muted">
+                                            {{ mov.referencia|default:"—" }}
+                                        </td>
+                                        <td class="small text-muted">
+                                            {% if mov.usuario %}{{ mov.usuario.username }}{% else %}—{% endif %}
+                                        </td>
+                                        <td class="pe-4 text-center">
+                                            <button class="btn btn-sm btn-outline-danger"
+                                                    onclick="revertirVenta({{ mov.id }})"
+                                                    title="Revertir esta salida y devolver stock">
+                                                <i class="fas fa-undo me-1"></i>Revertir
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <td colspan="2" class="ps-4 fw-bold">Total del día</td>
+                                        <td class="text-center fw-bold text-danger">
+                                            {{ dia.total_unidades|floatformat:"0"|intcomma }} uds.
+                                        </td>
+                                        <td colspan="5"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Estado vacío -->
+    <div class="card shadow-sm">
+        <div class="card-body text-center py-5 text-muted">
+            <i class="fas fa-chart-bar fa-3x mb-3 d-block opacity-25"></i>
+            <h5>No hay ventas registradas en este período</h5>
+            <p class="mb-3">Prueba cambiando el rango de fechas o confirma una venta desde el POS.</p>
+            <a href="{% url 'dashboard' %}" class="btn btn-primary">
+                <i class="fas fa-cash-register me-1"></i>Ir al Punto de Venta
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function expandirTodos() {
+        document.querySelectorAll('.accordion-collapse').forEach(el => {
+            new bootstrap.Collapse(el, { show: true });
+        });
+    }
+
+    function colapsarTodos() {
+        document.querySelectorAll('.accordion-collapse.show').forEach(el => {
+            new bootstrap.Collapse(el, { hide: true });
+        });
+    }
+
+    function revertirVenta(movId) {
+        if (!confirm('¿Revertir esta salida? El stock regresará al inventario automáticamente.')) return;
+
+        fetch(`/revertir-movimiento/${movId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(() => alert('Error de conexión con el servidor.'));
+    }
+</script>
+{% endblock %}

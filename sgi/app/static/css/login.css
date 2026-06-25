@@ -1,0 +1,260 @@
+/* =============================================
+   SGI — Login Page Styles
+   The End (Minecraft) — Mobile First
+   ============================================= */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* ── Canvas de fondo animado ── */
+#endCanvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    display: block;
+}
+
+/* ── Página ── */
+body.login-page {
+    font-family: 'Inter', sans-serif;
+    background-color: #0a0010;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    position: relative;
+    z-index: 1;
+}
+
+/* ── Card ── */
+.login-card {
+    position: relative;
+    z-index: 2;
+    background: rgba(10, 0, 20, 0.72);
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    border: 1px solid rgba(124, 58, 237, 0.35);
+    border-radius: 16px;
+    box-shadow:
+        0 0 0 1px rgba(167, 139, 250, 0.12),
+        0 8px 32px rgba(0, 0, 0, 0.7),
+        0 0 60px rgba(109, 40, 217, 0.15);
+    width: 100%;
+    max-width: 400px;
+    overflow: hidden;
+}
+
+/* ── Header ── */
+.login-header {
+    background: linear-gradient(160deg, #1a0035 0%, #0a001a 60%, #010d05 100%);
+    border-bottom: 1px solid rgba(124, 58, 237, 0.3);
+    padding: 2rem 1.5rem 1.75rem;
+    text-align: center;
+    color: #ffffff;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Brillo sutil tipo portal del End */
+.login-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 120%, rgba(109, 40, 217, 0.25) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.login-header .overlay {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.logo-icon {
+    margin-bottom: 8px;
+    background: rgba(109, 40, 217, 0.18);
+    border: 1px solid rgba(167, 139, 250, 0.3);
+    padding: 10px;
+    border-radius: 12px;
+    box-shadow: 0 0 16px rgba(109, 40, 217, 0.35);
+}
+
+.login-header h4 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: 0.08em;
+    color: #e9d5ff;
+    text-shadow: 0 0 20px rgba(167, 139, 250, 0.5);
+}
+
+.login-header small {
+    color: #a78bfa;
+    font-size: 0.82rem;
+    letter-spacing: 0.02em;
+}
+
+/* ── Body ── */
+.login-body {
+    padding: 1.75rem 1.5rem;
+}
+
+/* ── Alerta error ── */
+.alert-error {
+    background: rgba(220, 38, 38, 0.12);
+    border: 1px solid rgba(220, 38, 38, 0.35);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    color: #fca5a5;
+}
+
+/* ── Campos ── */
+.field-wrap {
+    margin-bottom: 1.1rem;
+}
+
+.field-label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #a78bfa;
+    margin-bottom: 7px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.field-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid rgba(124, 58, 237, 0.35);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #e9d5ff;
+    background: rgba(20, 0, 40, 0.6);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-family: 'Inter', sans-serif;
+}
+
+.field-input::placeholder {
+    color: rgba(167, 139, 250, 0.4);
+}
+
+.field-input:focus {
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+    background: rgba(30, 0, 55, 0.75);
+}
+
+/* Autofill dark fix */
+.field-input:-webkit-autofill,
+.field-input:-webkit-autofill:hover,
+.field-input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px rgba(20, 0, 40, 0.9) inset;
+    -webkit-text-fill-color: #e9d5ff;
+    caret-color: #e9d5ff;
+    border-color: rgba(124, 58, 237, 0.5);
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* ── Botón ingresar ── */
+.btn-login {
+    width: 100%;
+    padding: 13px;
+    background: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%);
+    color: #f5f3ff;
+    border: 1px solid rgba(167, 139, 250, 0.25);
+    border-radius: 8px;
+    font-size: 0.97rem;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+    margin-top: 0.5rem;
+    letter-spacing: 0.03em;
+    box-shadow: 0 4px 18px rgba(109, 40, 217, 0.4);
+}
+
+.btn-login:hover {
+    background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+    box-shadow: 0 4px 24px rgba(109, 40, 217, 0.6);
+}
+
+.btn-login:active {
+    transform: scale(0.98);
+}
+
+/* ── Botón Información ── */
+.btn-info {
+    display: block;
+    width: 100%;
+    text-align: center;
+    margin-top: 12px;
+    padding: 11px;
+    background: rgba(109, 40, 217, 0.08);
+    border: 1px solid rgba(124, 58, 237, 0.28);
+    color: #a78bfa;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    border-radius: 8px;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+    letter-spacing: 0.02em;
+}
+
+.btn-info:hover {
+    background: rgba(109, 40, 217, 0.18);
+    color: #c4b5fd;
+    border-color: rgba(167, 139, 250, 0.5);
+}
+
+/* ── Footer ── */
+.login-footer {
+    text-align: center;
+    margin-top: 1.25rem;
+    font-size: 0.72rem;
+    color: rgba(167, 139, 250, 0.45);
+    letter-spacing: 0.02em;
+}
+
+/* ── Responsive: pantallas más grandes ── */
+@media (min-width: 480px) {
+    .login-body {
+        padding: 2rem;
+    }
+
+    .login-header {
+        padding: 2.25rem 2rem 2rem;
+    }
+
+    .login-card {
+        max-width: 420px;
+    }
+
+    .login-header h4 {
+        font-size: 1.65rem;
+    }
+}
+
+/* ── Reducir movimiento ── */
+@media (prefers-reduced-motion: reduce) {
+    #endCanvas {
+        display: none;
+    }
+
+    body.login-page {
+        background: #0a0010;
+    }
+}

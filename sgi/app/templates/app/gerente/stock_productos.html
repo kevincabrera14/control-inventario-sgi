@@ -1,0 +1,334 @@
+{% extends 'app/base.html' %}
+{% load static %}
+
+{% block title %}Stock y Productos{% endblock %}
+
+{% block content %}
+<div class="container-fluid pt-3 px-3 px-md-4">
+
+    {# ── ENCABEZADO ─────────────────────────────────────────────────── #}
+    <div class="d-flex justify-content-between align-items-start mb-4 gap-2">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1" style="font-size:12px">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'dashboard' %}" style="color:var(--color-muted)">Dashboard</a>
+                    </li>
+                    <li class="breadcrumb-item active" style="color:var(--color-text)">Stock y Productos</li>
+                </ol>
+            </nav>
+            <h2 class="mb-0 fw-bold" style="color:var(--color-text)">Stock y Productos</h2>
+            <p class="small mb-0" style="color:var(--color-muted)">
+                {{ total_productos }} productos activos · {{ productos_stock_bajo }} con stock bajo
+            </p>
+        </div>
+        <div class="d-flex gap-2 flex-shrink-0">
+            <a href="{% url 'producto-create' %}" class="btn btn-sm btn-primary">
+                <i class="fas fa-plus me-1"></i><span class="d-none d-sm-inline">Nuevo Producto</span><span class="d-sm-none">Nuevo</span>
+            </a>
+            <a href="{% url 'dashboard' %}" class="btn btn-sm btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i><span class="d-none d-sm-inline">Volver</span>
+            </a>
+        </div>
+    </div>
+
+    {# ── RESUMEN RÁPIDO ─────────────────────────────────────────────── #}
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="glass-card p-3 border-0 shadow-sm text-center">
+                <h4 class="mb-0 fw-bold" style="color:var(--color-text)">{{ total_productos }}</h4>
+                <p class="mb-0 small" style="color:var(--color-muted)">Total activos</p>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="?stock=bajo" class="text-decoration-none">
+                <div class="glass-card p-3 border-0 shadow-sm text-center" style="border-bottom:3px solid #d97706 !important">
+                    <h4 class="mb-0 fw-bold" style="color:#d97706">{{ productos_stock_bajo }}</h4>
+                    <p class="mb-0 small" style="color:var(--color-muted)">Stock bajo</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="?stock=sin" class="text-decoration-none">
+                <div class="glass-card p-3 border-0 shadow-sm text-center" style="border-bottom:3px solid #dc2626 !important">
+                    <h4 class="mb-0 fw-bold" style="color:#dc2626">{{ productos_sin_stock }}</h4>
+                    <p class="mb-0 small" style="color:var(--color-muted)">Sin stock</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="glass-card p-3 border-0 shadow-sm text-center">
+                <h4 class="mb-0 fw-bold" style="color:var(--color-text)">${{ valor_inventario|floatformat:0 }}</h4>
+                <p class="mb-0 small" style="color:var(--color-muted)">Valor inventario</p>
+            </div>
+        </div>
+    </div>
+
+    {# ── FILTROS ────────────────────────────────────────────────────── #}
+    <form method="GET" class="glass-card p-3 mb-4">
+        <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-4">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text" style="background:rgba(124,58,237,.08);border-color:rgba(124,58,237,.25);color:var(--color-muted)">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" name="search" class="form-control form-control-sm"
+                           placeholder="Buscar por nombre o código…" value="{{ search }}">
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <select name="categoria" class="form-control form-control-sm">
+                    <option value="">Todas las categorías</option>
+                    {% for cat in categorias %}
+                    <option value="{{ cat.id }}" {% if categoria_seleccionada == cat.id|stringformat:'s' %}selected{% endif %}>
+                        {{ cat.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-3">
+                <select name="stock" class="form-control form-control-sm">
+                    <option value="">Todo el stock</option>
+                    <option value="bajo" {% if stock_filtro == 'bajo' %}selected{% endif %}>Stock bajo</option>
+                    <option value="sin" {% if stock_filtro == 'sin' %}selected{% endif %}>Sin stock</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-primary btn-sm flex-fill">Filtrar</button>
+                <a href="{% url 'gerente-stock-productos' %}" class="btn btn-secondary btn-sm px-3">✕</a>
+            </div>
+        </div>
+    </form>
+
+    {# ── MÓVIL: cards apiladas (xs / sm / md) ───────────────────────── #}
+    <div class="d-xl-none mb-4">
+        {% for producto in page_obj %}
+        <div class="glass-card p-3 mb-2 border-0 shadow-sm {% if producto.stock_bajo %}stock-bajo-row{% endif %}">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <span class="fw-semibold" style="color:var(--color-text)">{{ producto.nombre }}</span>
+                    {% if producto.codigo_barras %}
+                    <small class="d-block" style="color:var(--color-muted);font-size:11px">
+                        <i class="fas fa-barcode me-1"></i>{{ producto.codigo_barras }}
+                    </small>
+                    {% endif %}
+                </div>
+                {# Badge estado #}
+                {% if producto.stock_actual == 0 %}
+                    <span class="badge rounded-pill" style="background:rgba(220,38,38,.12);color:#dc2626;border:1px solid rgba(220,38,38,.3)">Sin stock</span>
+                {% elif producto.stock_bajo %}
+                    <span class="badge rounded-pill" style="background:rgba(217,119,6,.12);color:#d97706;border:1px solid rgba(217,119,6,.3)">Stock bajo</span>
+                {% else %}
+                    <span class="badge rounded-pill" style="background:rgba(22,163,74,.12);color:#16a34a;border:1px solid rgba(22,163,74,.3)">OK</span>
+                {% endif %}
+            </div>
+
+            <div class="row g-1 mb-2" style="font-size:13px">
+                <div class="col-6">
+                    <span style="color:var(--color-muted)">Categoría:</span>
+                    <span class="ms-1" style="color:var(--color-text)">{{ producto.categoria.nombre|default:"—" }}</span>
+                </div>
+                <div class="col-6">
+                    <span style="color:var(--color-muted)">Proveedor:</span>
+                    <span class="ms-1" style="color:var(--color-text)">{{ producto.proveedor.nombre|default:"—" }}</span>
+                </div>
+                <div class="col-4">
+                    <span style="color:var(--color-muted)">Compra:</span>
+                    <span class="ms-1 fw-semibold" style="color:var(--color-text)">${{ producto.precio_compra|floatformat:0 }}</span>
+                </div>
+                <div class="col-4">
+                    <span style="color:var(--color-muted)">Venta:</span>
+                    <span class="ms-1 fw-semibold" style="color:var(--color-accent)">${{ producto.precio_venta|floatformat:0 }}</span>
+                </div>
+                <div class="col-4">
+                    <span style="color:var(--color-muted)">Stock:</span>
+                    <span class="ms-1 fw-bold"
+                          style="color:{% if producto.stock_actual == 0 %}#dc2626{% elif producto.stock_bajo %}#d97706{% else %}#16a34a{% endif %}">
+                        {{ producto.stock_actual }}
+                    </span>
+                    <span style="color:var(--color-muted);font-size:11px"> / mín {{ producto.stock_minimo }}</span>
+                </div>
+            </div>
+
+            {# Botones acción móvil #}
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="{% url 'producto-detail' producto.pk %}"
+                   class="btn btn-sm flex-fill"
+                   style="background:rgba(124,58,237,.10);color:#7c3aed;border:1px solid rgba(124,58,237,.3);font-size:12px">
+                    <i class="fas fa-eye me-1"></i>Ver
+                </a>
+                <a href="{% url 'producto-update' producto.pk %}"
+                   class="btn btn-sm flex-fill"
+                   style="background:rgba(59,130,246,.10);color:#3b82f6;border:1px solid rgba(59,130,246,.3);font-size:12px">
+                    <i class="fas fa-edit me-1"></i>Editar
+                </a>
+                <a href="{% url 'entrada-create' %}?producto_id={{ producto.pk }}"
+                   class="btn btn-sm flex-fill"
+                   style="background:rgba(22,163,74,.10);color:#16a34a;border:1px solid rgba(22,163,74,.3);font-size:12px">
+                    <i class="fas fa-arrow-up me-1"></i>Entrada
+                </a>
+                <button onclick="confirmarEliminar({{ producto.pk }}, '{{ producto.nombre|escapejs }}')"
+                        class="btn btn-sm flex-fill"
+                        style="background:rgba(220,38,38,.10);color:#dc2626;border:1px solid rgba(220,38,38,.3);font-size:12px">
+                    <i class="fas fa-trash me-1"></i>Eliminar
+                </button>
+            </div>
+        </div>
+        {% empty %}
+        <div class="glass-card p-5 text-center border-0">
+            <i class="fas fa-box-open fa-2x mb-2 d-block" style="color:var(--color-muted);opacity:.4"></i>
+            <span style="color:var(--color-muted)">No hay productos que coincidan con los filtros.</span>
+            <a href="{% url 'gerente-stock-productos' %}" class="d-block mt-2 small" style="color:var(--color-accent)">Limpiar filtros →</a>
+        </div>
+        {% endfor %}
+    </div>
+
+    {# ── DESKTOP: tabla (xl+) ───────────────────────────────────────── #}
+    <div class="d-none d-xl-block glass-card p-0 overflow-hidden shadow-sm mb-4">
+        <table class="table mb-0 align-middle" style="color:var(--color-text)">
+            <thead style="background:rgba(124,58,237,.10);font-size:11px;text-transform:uppercase;letter-spacing:.05em">
+                <tr>
+                    <th class="ps-4 py-3" style="color:var(--color-muted)">Producto</th>
+                    <th class="py-3" style="color:var(--color-muted)">Categoría</th>
+                    <th class="py-3" style="color:var(--color-muted)">Proveedor</th>
+                    <th class="py-3 text-end" style="color:var(--color-muted)">P. Compra</th>
+                    <th class="py-3 text-end" style="color:var(--color-muted)">P. Venta</th>
+                    <th class="py-3 text-center" style="color:var(--color-muted)">Stock</th>
+                    <th class="py-3 text-center" style="color:var(--color-muted)">Mín.</th>
+                    <th class="py-3 text-center" style="color:var(--color-muted)">Estado</th>
+                    <th class="pe-4 py-3 text-end" style="color:var(--color-muted)">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for producto in page_obj %}
+                <tr style="border-bottom:1px solid rgba(124,58,237,.1);{% if producto.stock_bajo %}background:rgba(217,119,6,.04){% endif %}">
+                    <td class="ps-4">
+                        <div class="fw-semibold" style="color:var(--color-text)">{{ producto.nombre }}</div>
+                        {% if producto.codigo_barras %}
+                        <small style="color:var(--color-muted);font-size:11px">
+                            <i class="fas fa-barcode me-1"></i>{{ producto.codigo_barras }}
+                        </small>
+                        {% endif %}
+                    </td>
+                    <td style="color:var(--color-muted);font-size:13px">{{ producto.categoria.nombre|default:"—" }}</td>
+                    <td style="color:var(--color-muted);font-size:13px">{{ producto.proveedor.nombre|default:"—" }}</td>
+                    <td class="text-end" style="color:var(--color-muted)">${{ producto.precio_compra|floatformat:0 }}</td>
+                    <td class="text-end fw-semibold" style="color:var(--color-accent)">${{ producto.precio_venta|floatformat:0 }}</td>
+                    <td class="text-center fw-bold"
+                        style="color:{% if producto.stock_actual == 0 %}#dc2626{% elif producto.stock_bajo %}#d97706{% else %}#16a34a{% endif %}">
+                        {{ producto.stock_actual }}
+                    </td>
+                    <td class="text-center" style="color:var(--color-muted);font-size:13px">{{ producto.stock_minimo }}</td>
+                    <td class="text-center">
+                        {% if producto.stock_actual == 0 %}
+                            <span class="badge rounded-pill" style="background:rgba(220,38,38,.12);color:#dc2626;border:1px solid rgba(220,38,38,.3);font-size:11px">Sin stock</span>
+                        {% elif producto.stock_bajo %}
+                            <span class="badge rounded-pill" style="background:rgba(217,119,6,.12);color:#d97706;border:1px solid rgba(217,119,6,.3);font-size:11px">Stock bajo</span>
+                        {% else %}
+                            <span class="badge rounded-pill" style="background:rgba(22,163,74,.12);color:#16a34a;border:1px solid rgba(22,163,74,.3);font-size:11px">OK</span>
+                        {% endif %}
+                    </td>
+                    <td class="pe-4 text-end">
+                        <div class="d-flex gap-1 justify-content-end">
+                            <a href="{% url 'producto-detail' producto.pk %}"
+                               class="btn btn-sm" title="Ver detalle"
+                               style="background:rgba(124,58,237,.12);color:#7c3aed;border:1px solid rgba(124,58,237,.35);min-width:34px">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'producto-update' producto.pk %}"
+                               class="btn btn-sm" title="Editar"
+                               style="background:rgba(59,130,246,.12);color:#3b82f6;border:1px solid rgba(59,130,246,.35);min-width:34px">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'entrada-create' %}?producto_id={{ producto.pk }}"
+                               class="btn btn-sm" title="Registrar entrada"
+                               style="background:rgba(22,163,74,.12);color:#16a34a;border:1px solid rgba(22,163,74,.35);min-width:34px">
+                                <i class="fas fa-arrow-up"></i>
+                            </a>
+                            <button onclick="confirmarEliminar({{ producto.pk }}, '{{ producto.nombre|escapejs }}')"
+                                    class="btn btn-sm" title="Eliminar producto"
+                                    style="background:rgba(220,38,38,.12);color:#dc2626;border:1px solid rgba(220,38,38,.35);min-width:34px">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center py-5" style="color:var(--color-muted)">
+                        <i class="fas fa-box-open fa-2x mb-2 d-block" style="opacity:.3"></i>
+                        No hay productos que coincidan con los filtros aplicados.
+                        <a href="{% url 'gerente-stock-productos' %}" class="d-block mt-2 small" style="color:var(--color-accent)">Limpiar filtros →</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# ── PAGINACIÓN ─────────────────────────────────────────────────── #}
+    {% if page_obj.has_other_pages %}
+    <div class="d-flex justify-content-between align-items-center mt-3 mb-4">
+        <small style="color:var(--color-muted)">
+            Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ page_obj.paginator.count }} productos
+        </small>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&search={{ search }}&categoria={{ categoria_seleccionada }}&stock={{ stock_filtro }}">‹</a>
+                </li>
+                {% endif %}
+                <li class="page-item disabled">
+                    <span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+                </li>
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&search={{ search }}&categoria={{ categoria_seleccionada }}&stock={{ stock_filtro }}">›</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+
+</div>
+
+{# ── MODAL CONFIRMACIÓN ELIMINAR ────────────────────────────────────── #}
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="background:var(--color-surface);border:1px solid rgba(220,38,38,.25) !important;border-radius:14px">
+            <div class="modal-body p-4 text-center">
+                <div class="mb-3" style="font-size:2.5rem">🗑️</div>
+                <h5 class="fw-bold mb-1" style="color:var(--color-text)">¿Eliminar producto?</h5>
+                <p class="mb-0" style="color:var(--color-muted)">
+                    Vas a eliminar <strong id="nombreProductoModal" style="color:var(--color-text)"></strong>.
+                    Esta acción no se puede deshacer.
+                </p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pb-4 gap-2">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancelar</button>
+                <form id="formEliminar" method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="_method" value="DELETE">
+                    <button type="submit" class="btn px-4 fw-semibold"
+                            style="background:#dc2626;color:#fff;border:none;border-radius:8px">
+                        <i class="fas fa-trash me-1"></i> Sí, eliminar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmarEliminar(pk, nombre) {
+    document.getElementById('nombreProductoModal').textContent = nombre;
+    document.getElementById('formEliminar').action = `/productos/eliminar/${pk}/`;
+    new bootstrap.Modal(document.getElementById('modalEliminar')).show();
+}
+</script>
+{% endblock %}

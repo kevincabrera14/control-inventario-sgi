@@ -1,0 +1,131 @@
+/* Global Design System – SGI */
+
+:root {
+  --color-bg: #f0eeff;               /* CAMBIADO: era #0a0010 */
+  --color-surface: rgba(255,255,255,0.97); /* CAMBIADO: era rgba(10,0,20,0.72) */
+  --color-border: rgba(124,58,237,0.35);
+  --color-text: #1e1b4b;            /* CAMBIADO: era #e9d5ff */
+  --color-muted: #6d28d9;           /* CAMBIADO: era #a78bfa */
+  --color-accent: #7c3aed;
+  --color-accent-dark: #4c1d95;
+  --color-success: #16a34a;
+  --color-danger: #dc2626;
+  --color-warning: #d97706;
+}
+
+/* --- Reset & Base --- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--color-bg); color: var(--color-text); font-family: 'Inter', sans-serif; }
+
+/* --- Navbar / Sidebar --- */
+.navbar, .sidebar {
+  background: var(--color-surface);
+  backdrop-filter: blur(12px) saturate(1.4);
+  border-bottom: 1px solid var(--color-border);
+  z-index: 1050 !important;
+}
+.navbar .nav-link { color: var(--color-muted); }
+.navbar .nav-link:hover { color: var(--color-accent); }
+
+/* CORRECCIÓN CRÍTICA: Z-Index del menú desplegable */
+.dropdown-menu { z-index: 2050 !important; }
+
+/* --- Glass Cards genéricas --- */
+.glass-card, .login-card {
+  background: var(--color-surface);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(109,40,217,0.12); /* CAMBIADO: era rgba(0,0,0,0.5) – pesada sobre blanco */
+}
+
+/* --- Tablas --- */
+.table { width: 100%; color: var(--color-text); }
+.table thead { background: rgba(109,40,217,0.2); }
+.table th, .table td { padding: 0.75rem; border: 1px solid rgba(124,58,237,0.2); }
+.table tbody tr:hover { background: rgba(124,58,237,0.07); }
+
+/* --- Formularios --- */
+.form-control {
+  width: 100%; padding: 0.7rem 0.9rem;
+  border: 1.5px solid #e5e7eb; border-radius: 8px;
+  font-size: 0.95rem; color: #111827; background: #f9fafb;
+}
+.form-control:focus { border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(124,58,237,0.2); }
+
+/* --- Botones --- */
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-dark));
+  color: #fff; border: none; border-radius: 8px; transition: 0.2s;
+}
+.btn-primary:hover { opacity: .92; color: #fff;}
+.btn-secondary { background: rgba(109,40,217,0.08); border: 1px solid rgba(124,58,237,0.28); color: var(--color-text); }
+.btn-secondary:hover { background: rgba(109,40,217,0.18); color: var(--color-accent-dark); }
+.btn-success { background: linear-gradient(135deg, #16a34a, #15803d); color: #fff; border: none; border-radius: 8px; }
+
+/* --- Badges --- */
+.stock-bajo { background: var(--color-danger); color: #fff; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; }
+
+/* ============================================================
+   POS Y CARRITO (NUEVO DISEÑO RESPONSIVO Y BLANCO)
+   ============================================================ */
+
+/* Contenedor principal del POS */
+.pos-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+.pos-content {
+    flex: 1;
+    padding: 1rem;
+    transition: margin-right 0.3s ease;
+}
+
+/* Tarjetas de Producto Blancas */
+.product-card .card {
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.product-card .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px rgba(0,0,0,0.15);
+}
+.product-card .card-title { color: #111827 !important; font-weight: 600; font-size: 1rem;}
+
+/* Panel de Carrito */
+.cart-panel {
+    background: #ffffff;           /* CAMBIADO: era #111827 */
+    border-top: 1px solid #e9e4ff; /* CAMBIADO: era #374151 */
+    padding: 1rem;
+    z-index: 1040;
+    transition: width 0.3s ease;
+}
+
+/* --- Media Queries (Escritorio) --- */
+@media (min-width: 992px) {
+    .pos-wrapper { flex-direction: row; }
+
+    /* En PC, el contenido deja un margen derecho para el panel fijo */
+    .pos-content { margin-right: 320px; }
+
+    /* El carrito se vuelve un panel fijo a la derecha */
+    .cart-panel {
+        position: fixed;
+        top: 60px;
+        right: 0;
+        width: 320px;
+        height: calc(100vh - 60px);
+        border-top: none;
+        border-left: 1px solid #e9e4ff; /* CAMBIADO: era #374151 */
+        overflow-y: auto;
+    }
+
+    /* Clases dinámicas JS para encoger/agrandar carrito */
+    .cart-panel.expanded { width: 450px; }
+    .cart-panel.minimized { width: 80px; overflow: hidden; }
+}

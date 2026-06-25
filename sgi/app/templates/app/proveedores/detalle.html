@@ -1,0 +1,10 @@
+{% extends 'app/base.html' %}
+{% block title %}Detalle de {{ proveedor.nombre }}{% endblock %}
+{% block content %}
+<h2>{{ proveedor.nombre }}</h2>
+<p><strong>Contacto:</strong> {{ proveedor.contacto }}</p>
+<p><strong>Teléfono:</strong> {{ proveedor.telefono }}</p>
+<p><strong>Email:</strong> {{ proveedor.email }}</p>
+<p><strong>Dirección:</strong> {{ proveedor.direccion }}</p>
+<p><strong>Activo:</strong> {{ proveedor.activo }}</p>
+{% endblock %}

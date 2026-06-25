@@ -1,0 +1,332 @@
+{% extends 'app/base.html' %}
+{% load static %}
+
+{% block title %}POS Bodeguero{% endblock %}
+
+{% block content %}
+<div class="pos-wrapper">
+
+    <div class="pos-content" id="mainContent">
+
+        <div class="row mb-4 align-items-center g-3">
+            <div class="col-12 col-md-4">
+                <h2 class="mb-0">Punto de Venta</h2>
+            </div>
+
+            <div class="col-12 col-md-5">
+                <div class="input-group">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Buscar por nombre o código..."
+                        autofocus>
+                    <button class="btn btn-primary" onclick="realizarBusqueda()" id="btnBuscar">Buscar</button>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-3 text-md-end">
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle w-100 w-md-auto" type="button"
+                        data-bs-toggle="dropdown">
+                        <i class="fas fa-bolt"></i> Acciones
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow">
+
+                        <!-- Movimientos de stock -->
+                        <li>
+                            <h6 class="dropdown-header">Movimientos</h6>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'entrada-create' %}">
+                                <i class="fas fa-arrow-down text-success me-2"></i>Nueva Entrada (Ingreso)
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'salida-create' %}">
+                                <i class="fas fa-arrow-up text-danger me-2"></i>Salida Manual
+                            </a>
+                        </li>
+
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+
+                        <!-- Gestión de productos -->
+                        <li>
+                            <h6 class="dropdown-header">Productos</h6>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'bodeguero-lista-productos' %}">
+                                <i class="fas fa-boxes text-primary me-2"></i>Ver y Gestionar Productos
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'producto-create' %}">
+                                <i class="fas fa-plus-circle text-primary me-2"></i>Crear Nuevo Producto
+                            </a>
+                        </li>
+
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+
+                        <!-- Historial y reportes -->
+                        <li>
+                            <h6 class="dropdown-header">Historial y Reportes</h6>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'bodeguero-reportes-ventas' %}">
+                                <i class="fas fa-chart-bar text-warning me-2"></i>Reporte de Ventas por Día
+                            </a>
+                        </li>
+
+
+
+
+
+
+                        <li>
+                            <a class="dropdown-item" href="{% url 'bodeguero-revertir-venta' %}">
+                                <i class="fas fa-undo text-danger me-2"></i>Últimos Movimientos / Revertir
+                            </a>
+                        </li>
+
+
+
+
+
+
+
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-3" id="productGrid">
+            {% for producto in productos %}
+            <div class="col product-card" data-barcode="{{ producto.codigo_barras }}"
+                data-name="{{ producto.nombre|lower }}">
+                <div class="card h-100">
+                    <div class="card-body d-flex flex-column">
+                        <h6 class="card-title text-truncate" title="{{ producto.nombre }}">{{ producto.nombre }}</h6>
+                        <p class="card-text small text-muted mb-3">Stock:
+                            <span class="fw-bold {% if producto.stock_bajo %}text-danger{% endif %}">
+                                {{ producto.stock_actual }}
+                            </span>
+                        </p>
+
+                        <div class="mt-auto">
+                            <input type="number" class="form-control form-control-sm mb-2 quantity-input"
+                                data-id="{{ producto.pk }}" value="1" min="1" max="{{ producto.stock_actual }}">
+                            <button class="btn btn-primary btn-sm w-100"
+                                onclick="agregarAlCarrito('{{ producto.pk }}', '{{ producto.nombre|escapejs }}', {{ producto.stock_actual }})">
+                                Agregar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+
+<div class="cart-panel d-flex flex-column" id="cartPanel">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="text-dark mb-0">Resumen Venta</h5>
+        <button class="btn btn-sm btn-outline-secondary d-none d-lg-block" onclick="toggleCartSize()"
+            title="Cambiar tamaño">↔</button>
+    </div>
+
+    <div id="cart-items" class="flex-grow-1 overflow-auto mb-3">
+        <p class="text-muted small">No hay productos seleccionados.</p>
+    </div>
+
+    <div class="mt-auto pt-3 border-top">
+        <button id="btnConfirmar" class="btn btn-success w-100 py-2 fw-bold" onclick="confirmarVenta()">Confirmar
+            Salida</button>
+    </div>
+</div>
+    {% endblock %}
+
+    {% block extra_js %}
+    <script>
+        // ==========================================
+        // 1. LÓGICA DE BÚSQUEDA Y CÓDIGO DE BARRAS
+        // ==========================================
+        const searchInput = document.getElementById('searchInput');
+
+        function realizarBusqueda() {
+            const val = searchInput.value.toLowerCase().trim();
+            let encontrados = 0;
+            let ultimoEncontrado = null;
+
+            document.querySelectorAll('.product-card').forEach(card => {
+                const name = card.dataset.name;
+                const barcode = card.dataset.barcode || "";
+
+                if (name.includes(val) || barcode === val) {
+                    card.style.display = '';
+                    encontrados++;
+                    ultimoEncontrado = card;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            if (encontrados === 1 && val !== "") {
+                const btn = ultimoEncontrado.querySelector('button');
+                if (btn) btn.click();
+                searchInput.value = '';
+                realizarBusqueda();
+            }
+        }
+
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                realizarBusqueda();
+            }
+        });
+
+        // ==========================================
+        // 2. LÓGICA DEL CARRITO
+        // ==========================================
+        let cart = [];
+
+        function agregarAlCarrito(id, nombre, stockDisponible) {
+            const inputStr = document.querySelector(`.quantity-input[data-id="${id}"]`).value;
+            const cantidad = parseFloat(inputStr);
+
+            if (isNaN(cantidad) || cantidad <= 0) {
+                alert('Ingrese una cantidad válida.');
+                return;
+            }
+
+            const itemExistente = cart.find(item => item.producto_id === id);
+            const cantidadTotal = itemExistente ? itemExistente.cantidad + cantidad : cantidad;
+
+            if (cantidadTotal > parseFloat(stockDisponible)) {
+                alert(`Stock insuficiente. Solo hay ${stockDisponible} unidades disponibles.`);
+                return;
+            }
+
+            if (itemExistente) {
+                itemExistente.cantidad += cantidad;
+            } else {
+                cart.push({ producto_id: id, nombre: nombre, cantidad: cantidad });
+            }
+
+            document.querySelector(`.quantity-input[data-id="${id}"]`).value = 1;
+            renderCart();
+        }
+
+        function eliminarDelCarrito(index) {
+            cart.splice(index, 1);
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items');
+            if (cart.length === 0) {
+                container.innerHTML = '<p class="text-muted small">No hay productos seleccionados.</p>';
+                return;
+            }
+
+            let html = '<ul class="list-group list-group-flush">';
+            cart.forEach((item, index) => {
+                html += `
+            <li class="list-group-item bg-transparent text-white px-0 d-flex justify-content-between align-items-center" style="border-color: #374151;">
+                <div>
+                    <div class="fw-bold" style="font-size: 0.9rem;">${item.nombre}</div>
+                    <small class="text-muted">Cantidad: ${item.cantidad}</small>
+                </div>
+                <button class="btn btn-sm btn-outline-danger" onclick="eliminarDelCarrito(${index})">X</button>
+            </li>`;
+            });
+            html += '</ul>';
+            container.innerHTML = html;
+        }
+
+        // ==========================================
+        // 3. ENVÍO AL BACKEND (BATCH)
+        // ==========================================
+        function confirmarVenta() {
+            if (cart.length === 0) {
+                alert('El carrito está vacío.');
+                return;
+            }
+
+            const btn = document.getElementById('btnConfirmar');
+            btn.disabled = true;
+            btn.innerHTML = 'Procesando...';
+
+            fetch("{% url 'confirmar-movimiento' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ items: cart })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('Venta confirmada y stock actualizado.');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (data.error || data.message));
+                        btn.disabled = false;
+                        btn.innerHTML = 'Confirmar Salida';
+                    }
+                })
+                .catch(err => {
+                    alert('Error de conexión.');
+                    btn.disabled = false;
+                    btn.innerHTML = 'Confirmar Salida';
+                });
+        }
+
+        // ==========================================
+        // 4. CAMBIAR TAMAÑO DEL CARRITO (Solo Escritorio)
+        // ==========================================
+        function toggleCartSize() {
+            const panel = document.getElementById('cartPanel');
+            const content = document.getElementById('mainContent');
+
+            if (panel.classList.contains('expanded')) {
+                panel.classList.remove('expanded');
+                content.style.marginRight = '320px';
+            } else {
+                panel.classList.add('expanded');
+                content.style.marginRight = '450px';
+            }
+        }
+
+        // ==========================================
+        // 5. REVERTIR VENTA
+        // ==========================================
+        function revertirVenta(movId) {
+            if (!confirm('¿Estás seguro de que deseas revertir esta venta? El stock regresará automáticamente al inventario.')) {
+                return;
+            }
+
+            fetch(`/revertir-movimiento/${movId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Ocurrió un error al intentar comunicar con el servidor.');
+                });
+        }
+    </script>
+    {% endblock %}

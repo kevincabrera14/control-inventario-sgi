@@ -1,0 +1,43 @@
+{% extends 'app/base.html' %}
+{% block title %}Reportes{% endblock %}
+{% block content %}
+<h2>Reportes</h2>
+<div class="row">
+  <div class="col-md-3">
+    <div class="card mb-3">
+      <div class="card-body text-center">
+        <i class="bi bi-file-earmark-excel" style="font-size:2rem;"></i>
+        <h5 class="card-title">Inventario (Excel)</h5>
+        <a href="{% url 'reporte-inventario-excel' %}" class="btn btn-success">Descargar</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card mb-3">
+      <div class="card-body text-center">
+        <i class="bi bi-file-earmark-pdf" style="font-size:2rem;"></i>
+        <h5 class="card-title">Inventario (PDF)</h5>
+        <a href="{% url 'reporte-inventario-pdf' %}" class="btn btn-danger">Descargar</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card mb-3">
+      <div class="card-body text-center">
+        <i class="bi bi-file-earmark-pdf" style="font-size:2rem;"></i>
+        <h5 class="card-title">Stock bajo (PDF)</h5>
+        <a href="{% url 'reporte-stock-bajo-pdf' %}" class="btn btn-warning">Descargar</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card mb-3">
+      <div class="card-body text-center">
+        <i class="bi bi-file-earmark-excel" style="font-size:2rem;"></i>
+        <h5 class="card-title">Movimientos (Excel)</h5>
+        <a href="{% url 'reporte-movimientos-excel' %}" class="btn btn-primary">Descargar</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

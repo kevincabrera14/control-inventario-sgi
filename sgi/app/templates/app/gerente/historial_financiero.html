@@ -1,0 +1,292 @@
+{% extends 'app/base.html' %}
+{% load static %}
+
+{% block title %}Historial Financiero{% endblock %}
+
+{% block content %}
+<div class="container-fluid pt-3 px-4">
+
+    {# ── ENCABEZADO ─────────────────────────────────────────────────── #}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1" style="font-size:12px">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}" class="text-muted">Dashboard</a></li>
+                    <li class="breadcrumb-item active text-white">Historial Financiero</li>
+                </ol>
+            </nav>
+            <h2 class="mb-0 fw-bold text-white">Historial Financiero</h2>
+            <p class="text-muted small mb-0">Ventas, compras y movimiento de capital</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'reporte-inventario-excel' %}" class="btn btn-sm btn-outline-success">
+                <i class="fas fa-file-excel me-1"></i>Exportar
+            </a>
+            <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    {# ── FILTROS DE RANGO ───────────────────────────────────────────── #}
+    <div class="glass-card p-4 mb-4 border-secondary">
+        <h6 class="text-white mb-3"><i class="fas fa-filter me-2 text-muted"></i>Filtrar período</h6>
+        <form method="GET" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-muted small mb-1">Desde</label>
+                <input type="date" name="fecha_desde" class="form-control form-control-sm" value="{{ fecha_desde }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-muted small mb-1">Hasta</label>
+                <input type="date" name="fecha_hasta" class="form-control form-control-sm" value="{{ fecha_hasta }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-muted small mb-1">Tipo de movimiento</label>
+                <select name="tipo" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    <option value="E" {% if tipo_filtro == 'E' %}selected{% endif %}>Entradas (Compras)</option>
+                    <option value="S" {% if tipo_filtro == 'S' %}selected{% endif %}>Salidas (Ventas)</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary btn-sm w-100">
+                    <i class="fas fa-search me-1"></i>Aplicar filtro
+                </button>
+            </div>
+        </form>
+        {# Accesos rápidos de período #}
+        <div class="mt-3 d-flex gap-2 flex-wrap">
+            <span class="text-muted small me-1" style="line-height:30px">Período:</span>
+            <a href="?periodo=hoy" class="btn btn-xs btn-outline-secondary py-1 px-2" style="font-size:12px">Hoy</a>
+            <a href="?periodo=semana" class="btn btn-xs btn-outline-secondary py-1 px-2" style="font-size:12px">Esta semana</a>
+            <a href="?periodo=mes" class="btn btn-xs btn-outline-secondary py-1 px-2" style="font-size:12px">Este mes</a>
+            <a href="?periodo=mes_anterior" class="btn btn-xs btn-outline-secondary py-1 px-2" style="font-size:12px">Mes anterior</a>
+            <a href="?periodo=trimestre" class="btn btn-xs btn-outline-secondary py-1 px-2" style="font-size:12px">Trimestre</a>
+        </div>
+    </div>
+
+    {# ── RESUMEN KPIs DEL PERÍODO ───────────────────────────────────── #}
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="glass-card p-3 h-100 border-0 shadow position-relative overflow-hidden">
+                <div class="position-absolute top-0 start-0 h-100" style="width:4px;background:#22c55e"></div>
+                <p class="text-muted ps-2 mb-1" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em">Ingresos (Ventas)</p>
+                <h4 class="ps-2 mb-0 fw-bold" style="color:#22c55e">
+                    ${{ resumen.total_ingresos|floatformat:0 }}
+                </h4>
+                <small class="ps-2 text-muted">{{ resumen.total_salidas }} movimientos</small>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="glass-card p-3 h-100 border-0 shadow position-relative overflow-hidden">
+                <div class="position-absolute top-0 start-0 h-100" style="width:4px;background:#ef4444"></div>
+                <p class="text-muted ps-2 mb-1" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em">Egresos (Compras)</p>
+                <h4 class="ps-2 mb-0 fw-bold" style="color:#ef4444">
+                    ${{ resumen.total_egresos|floatformat:0 }}
+                </h4>
+                <small class="ps-2 text-muted">{{ resumen.total_entradas }} movimientos</small>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="glass-card p-3 h-100 border-0 shadow position-relative overflow-hidden">
+                <div class="position-absolute top-0 start-0 h-100"
+                     style="width:4px;background:{% if resumen.flujo_neto >= 0 %}#22c55e{% else %}#ef4444{% endif %}"></div>
+                <p class="text-muted ps-2 mb-1" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em">Flujo Neto</p>
+                <h4 class="ps-2 mb-0 fw-bold" style="color:{% if resumen.flujo_neto >= 0 %}#22c55e{% else %}#ef4444{% endif %}">
+                    ${{ resumen.flujo_neto|floatformat:0 }}
+                </h4>
+                <small class="ps-2 text-muted">Ingresos − Egresos</small>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="glass-card p-3 h-100 border-0 shadow position-relative overflow-hidden">
+                <div class="position-absolute top-0 start-0 h-100" style="width:4px;background:#60a5fa"></div>
+                <p class="text-muted ps-2 mb-1" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em">Días con actividad</p>
+                <h4 class="ps-2 mb-0 fw-bold text-white">{{ resumen.dias_con_actividad }}</h4>
+                <small class="ps-2 text-muted">en el período seleccionado</small>
+            </div>
+        </div>
+    </div>
+
+    {# ── VISTA POR PESTAÑAS: DÍA A DÍA / POR MES ──────────────────── #}
+    <ul class="nav nav-pills mb-3 gap-1" id="vistaTab" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" id="dia-tab" data-bs-toggle="pill" data-bs-target="#vistadiaria" type="button">
+                <i class="fas fa-calendar-day me-1"></i>Día a día
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="mes-tab" data-bs-toggle="pill" data-bs-target="#vistamensual" type="button">
+                <i class="fas fa-calendar-alt me-1"></i>Por mes
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="mov-tab" data-bs-toggle="pill" data-bs-target="#vistamovimientos" type="button">
+                <i class="fas fa-list me-1"></i>Detalle movimientos
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+
+        {# ── TAB: DÍA A DÍA ─────────────────────────────────────────── #}
+        <div class="tab-pane fade show active" id="vistadiaria">
+            <div class="glass-card p-0 overflow-hidden shadow-lg">
+                <table class="table table-dark table-hover mb-0 align-middle">
+                    <thead class="bg-dark text-muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em">
+                        <tr>
+                            <th class="ps-4 py-3">Fecha</th>
+                            <th class="py-3 text-end text-success">Ingresos</th>
+                            <th class="py-3 text-end text-danger">Egresos</th>
+                            <th class="py-3 text-end">Flujo del Día</th>
+                            <th class="py-3 text-center">Movimientos</th>
+                            <th class="pe-4 py-3 text-end">Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for dia in dias_lista %}
+                        <tr>
+                            <td class="ps-4 fw-semibold text-white">{{ dia.fecha|date:"D d/m/Y" }}</td>
+                            <td class="text-end" style="color:#22c55e;font-variant-numeric:tabular-nums">
+                                ${{ dia.ingresos|floatformat:0 }}
+                            </td>
+                            <td class="text-end" style="color:#f87171;font-variant-numeric:tabular-nums">
+                                ${{ dia.egresos|floatformat:0 }}
+                            </td>
+                            <td class="text-end fw-semibold font-variant-numeric:tabular-nums"
+                                style="color:{% if dia.flujo >= 0 %}#22c55e{% else %}#f87171{% endif %}">
+                                ${{ dia.flujo|floatformat:0 }}
+                            </td>
+                            <td class="text-center">
+                                {% if dia.total_movimientos %}
+                                <span class="badge bg-secondary rounded-pill">{{ dia.total_movimientos }}</span>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="pe-4 text-end">
+                                <a href="{% url 'historial-movimientos' %}?fecha_desde={{ dia.fecha|date:'Y-m-d' }}&fecha_hasta={{ dia.fecha|date:'Y-m-d' }}"
+                                   class="btn btn-xs btn-outline-secondary py-1 px-2" style="font-size:11px">
+                                    Ver →
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="fas fa-inbox fa-2x mb-2 d-block opacity-25"></i>
+                                Sin movimientos en el período seleccionado.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {# ── TAB: POR MES ────────────────────────────────────────────── #}
+        <div class="tab-pane fade" id="vistamensual">
+            <div class="glass-card p-0 overflow-hidden shadow-lg">
+                <table class="table table-dark table-hover mb-0 align-middle">
+                    <thead class="bg-dark text-muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em">
+                        <tr>
+                            <th class="ps-4 py-3">Mes</th>
+                            <th class="py-3 text-end text-success">Ingresos</th>
+                            <th class="py-3 text-end text-danger">Egresos</th>
+                            <th class="py-3 text-end">Flujo Mensual</th>
+                            <th class="pe-4 py-3 text-center">Movimientos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mes in meses_lista %}
+                        <tr>
+                            <td class="ps-4 fw-semibold text-white">{{ mes.nombre_mes }}</td>
+                            <td class="text-end" style="color:#22c55e">${{ mes.ingresos|floatformat:0 }}</td>
+                            <td class="text-end" style="color:#f87171">${{ mes.egresos|floatformat:0 }}</td>
+                            <td class="text-end fw-semibold"
+                                style="color:{% if mes.flujo >= 0 %}#22c55e{% else %}#f87171{% endif %}">
+                                ${{ mes.flujo|floatformat:0 }}
+                            </td>
+                            <td class="pe-4 text-center">
+                                <span class="badge bg-secondary rounded-pill">{{ mes.total_movimientos }}</span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center py-5 text-muted">Sin datos mensuales.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {# ── TAB: DETALLE MOVIMIENTOS ─────────────────────────────────── #}
+        <div class="tab-pane fade" id="vistamovimientos">
+            <div class="table-responsive glass-card p-0 overflow-hidden shadow-lg">
+                <table class="table table-dark table-hover mb-0 align-middle">
+                    <thead class="bg-dark text-muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em">
+                        <tr>
+                            <th class="ps-4 py-3">Fecha</th>
+                            <th class="py-3">Producto</th>
+                            <th class="py-3">Tipo</th>
+                            <th class="py-3 text-end">Cantidad</th>
+                            <th class="py-3 text-end">Costo Unit.</th>
+                            <th class="py-3 text-end">Total</th>
+                            <th class="pe-4 py-3 text-muted">Usuario</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mov in movimientos_detalle %}
+                        <tr>
+                            <td class="ps-4 text-muted" style="font-size:13px;white-space:nowrap">{{ mov.fecha|date:"d/m/Y H:i" }}</td>
+                            <td class="fw-semibold text-white">{{ mov.producto.nombre }}</td>
+                            <td>
+                                {% if mov.tipo == 'E' %}
+                                    <span class="badge rounded-pill" style="background:rgba(34,197,94,.2);color:#4ade80;border:1px solid rgba(34,197,94,.3)">↑ Entrada</span>
+                                {% elif mov.tipo == 'S' %}
+                                    <span class="badge rounded-pill" style="background:rgba(239,68,68,.2);color:#f87171;border:1px solid rgba(239,68,68,.3)">↓ Salida</span>
+                                {% else %}
+                                    <span class="badge rounded-pill" style="background:rgba(250,204,21,.2);color:#fde047;border:1px solid rgba(250,204,21,.3)">⟳ Ajuste</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end text-white">{{ mov.cantidad }}</td>
+                            <td class="text-end text-muted">${{ mov.costo_unitario|floatformat:0 }}</td>
+                            <td class="text-end fw-semibold"
+                                style="color:{% if mov.tipo == 'E' %}#f87171{% else %}#4ade80{% endif %}">
+                                ${{ mov.total|floatformat:0 }}
+                            </td>
+                            <td class="pe-4 text-muted" style="font-size:12px">{{ mov.usuario.username }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="7" class="text-center py-5 text-muted">Sin movimientos en el período.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {# Paginación #}
+            {% if movimientos_detalle.has_other_pages %}
+            <div class="d-flex justify-content-center mt-3 pb-3">
+                <nav>
+                    <ul class="pagination pagination-sm">
+                        {% if movimientos_detalle.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ movimientos_detalle.previous_page_number }}&{{ request.GET.urlencode }}">‹</a>
+                        </li>
+                        {% endif %}
+                        <li class="page-item disabled">
+                            <span class="page-link">{{ movimientos_detalle.number }} / {{ movimientos_detalle.paginator.num_pages }}</span>
+                        </li>
+                        {% if movimientos_detalle.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ movimientos_detalle.next_page_number }}&{{ request.GET.urlencode }}">›</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>{# /tab-content #}
+
+</div>
+{% endblock %}

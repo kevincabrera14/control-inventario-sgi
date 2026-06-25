@@ -1,0 +1,10 @@
+{% extends 'app/base.html' %}
+{% block title %}{% if view.object %}Editar Producto{% else %}Nuevo Producto{% endif %}{% endblock %}
+{% block content %}
+<h2>{% if view.object %}Editar Producto{% else %}Nuevo Producto{% endif %}</h2>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">{% if view.object %}Actualizar{% else %}Crear{% endif %}</button>
+</form>
+{% endblock %}

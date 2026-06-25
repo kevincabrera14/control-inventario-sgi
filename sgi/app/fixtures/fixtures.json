@@ -1,0 +1,184 @@
+[
+  {
+    "model": "app.categoria",
+    "pk": 1,
+    "fields": {
+      "nombre": "Electrónicos",
+      "descripcion": "Dispositivos electrónicos"
+    }
+  },
+  {
+    "model": "app.categoria",
+    "pk": 2,
+    "fields": {
+      "nombre": "Muebles",
+      "descripcion": "Muebles y accesorios"
+    }
+  },
+  {
+    "model": "app.proveedor",
+    "pk": 1,
+    "fields": {
+      "nombre": "Proveedor A",
+      "contacto": "Juan Perez",
+      "telefono": "123456789",
+      "email": "juan@example.com",
+      "direccion": "Calle 123",
+      "activo": true,
+      "creado_en": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "app.proveedor",
+    "pk": 2,
+    "fields": {
+      "nombre": "Proveedor B",
+      "contacto": "",
+      "telefono": "",
+      "email": "",
+      "direccion": "",
+      "activo": true,
+      "creado_en": "2026-01-02T00:00:00Z"
+    }
+  },
+  {
+    "model": "app.producto",
+    "pk": 1,
+    "fields": {
+      "codigo_barras": "ABC123",
+      "nombre": "Laptop X",
+      "descripcion": "Laptop de alta gama",
+      "categoria": 1,
+      "proveedor": 1,
+      "precio_compra": "800.00",
+      "precio_venta": "1200.00",
+      "iva": 19,
+      "stock_actual": "10",
+      "stock_minimo": "5",
+      "imagen": null,
+      "activo": true,
+      "creado_en": "2026-02-01T12:00:00Z",
+      "actualizado_en": "2026-02-01T12:00:00Z"
+    }
+  },
+  {
+    "model": "app.producto",
+    "pk": 2,
+    "fields": {
+      "codigo_barras": "DEF456",
+      "nombre": "Silla Ergonomica",
+      "descripcion": "Silla cómoda para oficina",
+      "categoria": 2,
+      "proveedor": 2,
+      "precio_compra": "50.00",
+      "precio_venta": "85.00",
+      "iva": 5,
+      "stock_actual": "20",
+      "stock_minimo": "10",
+      "imagen": null,
+      "activo": true,
+      "creado_en": "2026-02-02T12:00:00Z",
+      "actualizado_en": "2026-02-02T12:00:00Z"
+    }
+  },
+  {
+    "model": "app.producto",
+    "pk": 3,
+    "fields": {
+      "codigo_barras": "",
+      "nombre": "Mouse Wireless",
+      "descripcion": "",
+      "categoria": 1,
+      "proveedor": null,
+      "precio_compra": "10.00",
+      "precio_venta": "15.00",
+      "iva": 0,
+      "stock_actual": "50",
+      "stock_minimo": "20",
+      "imagen": null,
+      "activo": true,
+      "creado_en": "2026-02-03T12:00:00Z",
+      "actualizado_en": "2026-02-03T12:00:00Z"
+    }
+  },
+  {
+    "model": "app.movimientoinventario",
+    "pk": 1,
+    "fields": {
+      "producto": 1,
+      "tipo": "E",
+      "cantidad": "5",
+      "costo_unitario": "800.00",
+      "stock_antes": "5",
+      "stock_despues": "10",
+      "referencia": "Factura 001",
+      "observacion": "",
+      "usuario": null,
+      "fecha": "2026-03-01T09:00:00Z"
+    }
+  },
+  {
+    "model": "app.movimientoinventario",
+    "pk": 2,
+    "fields": {
+      "producto": 2,
+      "tipo": "E",
+      "cantidad": "15",
+      "costo_unitario": "50.00",
+      "stock_antes": "5",
+      "stock_despues": "20",
+      "referencia": "Factura 002",
+      "observacion": "",
+      "usuario": null,
+      "fecha": "2026-03-02T10:00:00Z"
+    }
+  },
+  {
+    "model": "app.movimientoinventario",
+    "pk": 3,
+    "fields": {
+      "producto": 3,
+      "tipo": "E",
+      "cantidad": "25",
+      "costo_unitario": "10.00",
+      "stock_antes": "0",
+      "stock_despues": "25",
+      "referencia": "",
+      "observacion": "",
+      "usuario": null,
+      "fecha": "2026-03-03T11:00:00Z"
+    }
+  },
+  {
+    "model": "app.movimientoinventario",
+    "pk": 4,
+    "fields": {
+      "producto": 1,
+      "tipo": "S",
+      "cantidad": "2",
+      "costo_unitario": "0",
+      "stock_antes": "10",
+      "stock_despues": "8",
+      "referencia": "Venta 001",
+      "observacion": "",
+      "usuario": null,
+      "fecha": "2026-03-04T14:00:00Z"
+    }
+  },
+  {
+    "model": "app.movimientoinventario",
+    "pk": 5,
+    "fields": {
+      "producto": 2,
+      "tipo": "S",
+      "cantidad": "3",
+      "costo_unitario": "0",
+      "stock_antes": "20",
+      "stock_despues": "17",
+      "referencia": "Venta 002",
+      "observacion": "",
+      "usuario": null,
+      "fecha": "2026-03-05T15:00:00Z"
+    }
+  }
+]

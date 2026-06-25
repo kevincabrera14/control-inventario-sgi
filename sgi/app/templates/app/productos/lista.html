@@ -1,0 +1,166 @@
+{% extends 'app/base.html' %}
+{% block title %}Lista de Productos{% endblock %}
+{% block content %}
+<h2>Productos</h2>
+<form method="get" class="row g-3 mb-3">
+  <div class="col-md-8">
+    <input type="text" name="search" class="form-control" placeholder="Buscar por nombre o código" value="{{ request.GET.search }}">
+  </div>
+  <div class="col-md-2">
+    <button type="submit" class="btn btn-primary">Buscar</button>
+  </div>
+  {% if user.is_superuser %}
+    <div class="col-md-2 text-end">
+      <a href="{% url 'producto-create' %}" class="btn btn-success">Nuevo Producto</a>
+    </div>
+  {% endif %}
+</form>
+
+<div class="product-grid">
+  {% for producto in object_list %}
+  <div class="card h-100 glass-card" data-product-id="{{ producto.pk }}" data-barcode="{{ producto.codigo_barras }}">
+    {% if producto.imagen %}
+    <img src="{{ producto.imagen.url }}" class="card-img-top" alt="{{ producto.nombre }}" />
+    {% endif %}
+    <div class="card-body d-flex flex-column">
+      <h5 class="card-title">{{ producto.nombre }}</h5>
+      <p class="card-text">Stock: <span class="stock-valor{% if producto.stock_actual <= producto.stock_minimo %} stock-bajo{% endif %}">{{ producto.stock_actual }}</span></p>
+      <div class="mt-auto">
+        <input type="number" class="form-control quantity-input" min="1" max="{{ producto.stock_actual }}" value="1" />
+        <button class="btn btn-primary mt-2 add-to-cart-btn">Agregar al Carrito</button>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <p>No hay productos.</p>
+  {% endfor %}
+</div>
+
+{% if is_paginated %}
+<nav aria-label="Page navigation">
+    <ul class="pagination">
+        {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a></li>
+        {% endif %}
+        {% for num in paginator.page_range %}
+            {% if page_obj.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% else %}
+                <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+            {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<div id="cart-panel" class="cart-panel">
+  <h4>Resumen de Selección</h4>
+  <ul id="cart-items" class="list-group mb-3"></ul>
+  <button id="confirm-movimiento-btn" class="btn btn-success w-100">Confirmar Movimiento</button>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const cart = [];
+
+  function renderCart() {
+    const cartItems = document.getElementById('cart-items');
+    cartItems.innerHTML = '';
+    cart.forEach((item, idx) => {
+      const li = document.createElement('li');
+      li.className = 'list-group-item d-flex justify-content-between align-items-center';
+      li.textContent = `${item.nombre} (x${item.cantidad})`;
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'btn btn-sm btn-outline-danger';
+      removeBtn.textContent = 'Eliminar';
+      removeBtn.addEventListener('click', () => {
+        cart.splice(idx, 1);
+        renderCart();
+      });
+      li.appendChild(removeBtn);
+      cartItems.appendChild(li);
+    });
+  }
+
+  // Add to cart buttons
+  document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const card = this.closest('.card');
+      const productoId = card.dataset.productId;
+      const nombre = card.querySelector('.card-title').textContent.trim();
+      const cantidad = parseInt(card.querySelector('.quantity-input').value, 10);
+      if (cantidad <= 0) return;
+      const existing = cart.find(i => i.producto_id == productoId);
+      if (existing) {
+        existing.cantidad = cantidad;
+      } else {
+        cart.push({producto_id: parseInt(productoId,10), nombre: nombre, cantidad: cantidad});
+      }
+      renderCart();
+    });
+  });
+
+  // Confirm button
+  const confirmBtn = document.getElementById('confirm-movimiento-btn');
+  confirmBtn.addEventListener('click', function () {
+    if (!cart.length) {
+      alert('El carrito está vacío.');
+      return;
+    }
+    const csrftoken = (document.cookie.match(/(^|;)\s*csrftoken=([^;]+)/)||[])[2];
+    fetch("{% url 'confirmar-movimiento' %}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrftoken
+      },
+      body: JSON.stringify({items: cart})
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'success') {
+        alert('Movimiento registrado correctamente.');
+        location.reload();
+      } else {
+        alert('Error: ' + (data.error || 'Desconocido'));
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Error de red.');
+    });
+  });
+
+  // Barcode scanner listener
+  let barcode = '';
+  let lastTime = Date.now();
+  document.addEventListener('keydown', function (e) {
+    const now = Date.now();
+    if (now - lastTime > 100) {
+      barcode = '';
+    }
+    if (e.key === 'Enter') {
+      if (barcode) {
+        const target = document.querySelector(`.card[data-barcode="${barcode}"]`);
+        if (target) {
+          const btn = target.querySelector('.add-to-cart-btn');
+          if (btn) btn.click();
+        } else {
+          alert('Código no encontrado: ' + barcode);
+        }
+        barcode = '';
+      }
+    } else {
+      barcode += e.key;
+    }
+    lastTime = now;
+  });
+});
+</script>
+{% endblock %}

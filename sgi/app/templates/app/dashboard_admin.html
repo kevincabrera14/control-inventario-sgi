@@ -1,0 +1,55 @@
+{% extends 'app/base.html' %}
+{% load humanize %}
+{% block title %}Dashboard Administrador{% endblock %}
+{% block content %}
+<h2>Resumen del Inventario</h2>
+
+<div class="row">
+  <div class="col-md-4">
+    <div class="card text-white bg-primary mb-3">
+      <div class="card-body">
+        <h5 class="card-title">Total Productos</h5>
+        <p class="card-text">{{ total_productos|intcomma }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card text-white bg-warning mb-3">
+      <div class="card-body">
+        <h5 class="card-title">Productos con Stock Bajo</h5>
+        <p class="card-text">{{ productos_stock_bajo|length|intcomma }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card text-white bg-success mb-3">
+      <div class="card-body">
+        <h5 class="card-title">Valor Total Inventario</h5>
+        <p class="card-text">{{ valor_total|floatformat:2|intcomma }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3>Últimos Movimientos</h3>
+<table class="table table-sm">
+  <thead>
+    <tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th>Cantidad</th><th>Usuario</th></tr>
+  </thead>
+  <tbody>
+    {% for mov in ultimos_movimientos %}
+    <tr class="{% if mov.tipo == 'E' %}table-success{% elif mov.tipo == 'S' %}table-danger{% else %}table-warning{% endif %}">
+      <td>{{ mov.fecha }}</td>
+      <td>{{ mov.producto.nombre }}</td>
+      <td>{{ mov.get_tipo_display }}</td>
+      <td>{{ mov.cantidad|floatformat:2|intcomma }}</td>
+      <td>{% if mov.usuario %}{{ mov.usuario.username }}{% endif %}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5">Sin movimientos.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

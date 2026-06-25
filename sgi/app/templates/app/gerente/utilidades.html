@@ -1,0 +1,336 @@
+{% extends 'app/base.html' %}
+{% load static %}
+
+{% block title %}Utilidades y Proyecciones{% endblock %}
+
+{% block content %}
+<div class="container-fluid pt-3 px-3 px-md-4">
+
+    {# ── ENCABEZADO ─────────────────────────────────────────────────── #}
+    <div class="d-flex justify-content-between align-items-start mb-4 gap-2">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1" style="font-size:12px">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'dashboard' %}" style="color:var(--color-muted)">Dashboard</a>
+                    </li>
+                    <li class="breadcrumb-item active" style="color:var(--color-text)">Utilidades y Proyecciones</li>
+                </ol>
+            </nav>
+            <h2 class="mb-0 fw-bold" style="color:var(--color-text)">Utilidades y Proyecciones</h2>
+            <p class="small mb-0" style="color:var(--color-muted)">Margen bruto, rentabilidad y simulaciones de crecimiento</p>
+        </div>
+        <a href="{% url 'dashboard' %}" class="btn btn-sm btn-secondary flex-shrink-0">
+            <i class="fas fa-arrow-left me-1"></i><span class="d-none d-sm-inline">Volver</span>
+        </a>
+    </div>
+
+    {# ── FILTRO DE PERÍODO ──────────────────────────────────────────── #}
+    <div class="glass-card p-3 mb-4">
+        <form method="GET" class="row g-2 align-items-end">
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-semibold mb-1" style="color:var(--color-muted)">Desde</label>
+                <input type="date" name="fecha_desde" class="form-control form-control-sm" value="{{ fecha_desde }}">
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-semibold mb-1" style="color:var(--color-muted)">Hasta</label>
+                <input type="date" name="fecha_hasta" class="form-control form-control-sm" value="{{ fecha_hasta }}">
+            </div>
+            <div class="col-12 col-md-3">
+                <button type="submit" class="btn btn-primary btn-sm w-100">
+                    <i class="fas fa-calculator me-1"></i>Calcular período
+                </button>
+            </div>
+            <div class="col-12 col-md-3">
+                <div class="d-flex gap-1 flex-wrap">
+                    <a href="?periodo=mes"       class="btn btn-secondary btn-sm flex-fill" style="font-size:11px">Este mes</a>
+                    <a href="?periodo=trimestre" class="btn btn-secondary btn-sm flex-fill" style="font-size:11px">Trimestre</a>
+                    <a href="?periodo=año"       class="btn btn-secondary btn-sm flex-fill" style="font-size:11px">Año</a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {# ── KPIs DE UTILIDAD ───────────────────────────────────────────── #}
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="glass-card p-3 h-100 border-0 shadow-sm position-relative overflow-hidden">
+                <div class="position-absolute top-0 start-0 h-100" style="width:4px;background:#16a34a;border-radius:4px 0 0 4px"></div>
+                <p class="ps-2 mb-1 text-uppercase fw-semibold" style="font-size:10px;letter-spacing:.06em;color:var(--color-muted)">Ingresos Brutos</p>
+                <h4 class="ps-2 mb-0 fw-bold" style="color:var(--color-text)">${{ utilidades.ingresos_brutos|floatformat:0 }}</h4>
+                <small class="ps-2" style="color:var(--color-muted)">Ventas del período</small>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="glass-card p-3 h-100 border-0 shadow-sm position-relative overflow-hidden">
+                <div class="position-absolute top-0 start-0 h-100" style="width:4px;background:#dc2626;border-radius:4px 0 0 4px"></div>
+                <p class="ps-2 mb-1 text-uppercase fw-semibold" style="font-size:10px;letter-spacing:.06em;color:var(--color-muted)">Costo de Ventas</p>
+                <h4 class="ps-2 mb-0 fw-bold" style="color:#dc2626">${{ utilidades.costo_ventas|floatformat:0 }}</h4>
+                <small class="ps-2" style="color:var(--color-muted)">Compras del período</small>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="glass-card p-3 h-100 border-0 shadow-sm position-relative overflow-hidden" style="border:1px solid rgba(124,58,237,.2) !important">
+                <div class="position-absolute top-0 start-0 h-100" style="width:4px;background:#7c3aed;border-radius:4px 0 0 4px"></div>
+                <p class="ps-2 mb-1 text-uppercase fw-semibold" style="font-size:10px;letter-spacing:.06em;color:var(--color-muted)">Utilidad Bruta</p>
+                <h4 class="ps-2 mb-0 fw-bold" style="color:#7c3aed">${{ utilidades.utilidad_bruta|floatformat:0 }}</h4>
+                <small class="ps-2" style="color:var(--color-muted)">Ingresos − Costo</small>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="glass-card p-3 h-100 border-0 shadow-sm position-relative overflow-hidden">
+                {% with m=utilidades.margen_bruto %}
+                <div class="position-absolute top-0 start-0 h-100"
+                     style="width:4px;border-radius:4px 0 0 4px;background:{% if m >= 30 %}#16a34a{% elif m >= 10 %}#d97706{% else %}#dc2626{% endif %}"></div>
+                <p class="ps-2 mb-1 text-uppercase fw-semibold" style="font-size:10px;letter-spacing:.06em;color:var(--color-muted)">Margen Bruto</p>
+                <h4 class="ps-2 mb-0 fw-bold"
+                    style="color:{% if m >= 30 %}#16a34a{% elif m >= 10 %}#d97706{% else %}#dc2626{% endif %}">
+                    {{ m|floatformat:1 }}%
+                </h4>
+                <small class="ps-2" style="color:var(--color-muted)">% sobre ingresos</small>
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        {# ── TOP 10 PRODUCTOS ───────────────────────────────────────── #}
+        <div class="col-12 col-lg-7">
+            <div class="glass-card p-3 p-md-4 h-100">
+                <h6 class="fw-bold mb-3" style="color:var(--color-text)">
+                    <i class="fas fa-trophy me-2" style="color:#d97706"></i>Top 10 Productos por Utilidad
+                </h6>
+
+                {# MÓVIL: cards #}
+                <div class="d-lg-none">
+                    {% for p in top_productos %}
+                    <div class="d-flex justify-content-between align-items-center py-2"
+                         style="border-bottom:1px solid rgba(124,58,237,.1)">
+                        <div>
+                            <span class="small fw-semibold" style="color:var(--color-text)">
+                                {{ forloop.counter }}. {{ p.nombre }}
+                            </span>
+                            <div class="mt-1">
+                                <span class="small me-3" style="color:var(--color-muted)">Ventas: <strong style="color:#16a34a">${{ p.total_ventas|floatformat:0 }}</strong></span>
+                                <span class="small" style="color:var(--color-muted)">Costo: <strong style="color:var(--color-text)">${{ p.total_costo|floatformat:0 }}</strong></span>
+                            </div>
+                        </div>
+                        <div class="text-end ms-2 flex-shrink-0">
+                            <div class="fw-bold" style="color:#7c3aed;font-size:14px">${{ p.utilidad|floatformat:0 }}</div>
+                            <small style="color:{% if p.margen >= 30 %}#16a34a{% elif p.margen >= 10 %}#d97706{% else %}#dc2626{% endif %}">{{ p.margen|floatformat:1 }}%</small>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-center py-4" style="color:var(--color-muted)">Sin datos de ventas en el período.</p>
+                    {% endfor %}
+                </div>
+
+                {# DESKTOP: tabla #}
+                <div class="d-none d-lg-block table-responsive">
+                    <table class="table mb-0 align-middle" style="color:var(--color-text)">
+                        <thead style="font-size:11px;text-transform:uppercase;letter-spacing:.05em">
+                            <tr style="border-bottom:1px solid rgba(124,58,237,.15)">
+                                <th class="py-2 fw-semibold" style="color:var(--color-muted)">#</th>
+                                <th class="py-2 fw-semibold" style="color:var(--color-muted)">Producto</th>
+                                <th class="py-2 fw-semibold text-end" style="color:var(--color-muted)">Ventas</th>
+                                <th class="py-2 fw-semibold text-end" style="color:var(--color-muted)">Costo</th>
+                                <th class="py-2 fw-semibold text-end" style="color:var(--color-muted)">Utilidad</th>
+                                <th class="py-2 fw-semibold text-end" style="color:var(--color-muted)">Margen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in top_productos %}
+                            <tr style="border-bottom:1px solid rgba(124,58,237,.08)">
+                                <td class="py-2" style="color:var(--color-muted);font-size:12px">{{ forloop.counter }}</td>
+                                <td class="py-2 fw-semibold" style="color:var(--color-text);font-size:13px">{{ p.nombre }}</td>
+                                <td class="py-2 text-end" style="color:#16a34a;font-size:13px">${{ p.total_ventas|floatformat:0 }}</td>
+                                <td class="py-2 text-end" style="color:var(--color-muted);font-size:13px">${{ p.total_costo|floatformat:0 }}</td>
+                                <td class="py-2 text-end fw-bold" style="color:#7c3aed;font-size:13px">${{ p.utilidad|floatformat:0 }}</td>
+                                <td class="py-2 text-end fw-semibold" style="font-size:12px;color:{% if p.margen >= 30 %}#16a34a{% elif p.margen >= 10 %}#d97706{% else %}#dc2626{% endif %}">
+                                    {{ p.margen|floatformat:1 }}%
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4" style="color:var(--color-muted)">
+                                    Sin datos de ventas en el período.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {# ── SIMULADOR DE PROYECCIONES ──────────────────────────────── #}
+        <div class="col-12 col-lg-5">
+            <div class="glass-card p-3 p-md-4 h-100">
+                <h6 class="fw-bold mb-1" style="color:var(--color-text)">
+                    <i class="fas fa-magic me-2" style="color:var(--color-accent)"></i>Simulador de Proyecciones
+                </h6>
+                <p class="small mb-3" style="color:var(--color-muted)">
+                    Ajusta los parámetros para estimar la utilidad proyectada.
+                </p>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold mb-1" style="color:var(--color-muted)">Ventas mensuales estimadas ($)</label>
+                    <input type="number" id="proj_ventas" class="form-control form-control-sm"
+                           value="{{ utilidades.ventas_promedio_mes|floatformat:0 }}" min="0" step="1000"
+                           oninput="calcularProyeccion()">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold mb-1" style="color:var(--color-muted)">Margen bruto esperado (%)</label>
+                    <input type="number" id="proj_margen" class="form-control form-control-sm"
+                           value="{{ utilidades.margen_bruto|floatformat:1 }}" min="0" max="100" step="0.5"
+                           oninput="calcularProyeccion()">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold mb-1" style="color:var(--color-muted)">Crecimiento mensual estimado (%)</label>
+                    <input type="number" id="proj_crecimiento" class="form-control form-control-sm"
+                           value="5" min="-50" max="200" step="0.5"
+                           oninput="calcularProyeccion()">
+                </div>
+                <div class="mb-4">
+                    <label class="form-label small fw-semibold mb-1" style="color:var(--color-muted)">
+                        Meses a proyectar: <span id="proj_meses_label" class="fw-bold" style="color:var(--color-accent)">6 meses</span>
+                    </label>
+                    <input type="range" id="proj_meses" class="form-range" min="1" max="24" value="6"
+                           oninput="document.getElementById('proj_meses_label').textContent=this.value+' meses'; calcularProyeccion()">
+                    <div class="d-flex justify-content-between">
+                        <small style="color:var(--color-muted)">1 mes</small>
+                        <small style="color:var(--color-muted)">24 meses</small>
+                    </div>
+                </div>
+
+                {# Resultado #}
+                <div class="rounded p-3 mb-3" style="background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.2)">
+                    <div class="row text-center g-2">
+                        <div class="col-6">
+                            <p class="mb-1 text-uppercase fw-semibold" style="font-size:10px;color:var(--color-muted)">Utilidad proyectada</p>
+                            <h5 class="mb-0 fw-bold" style="color:#7c3aed" id="proj_resultado">—</h5>
+                        </div>
+                        <div class="col-6">
+                            <p class="mb-1 text-uppercase fw-semibold" style="font-size:10px;color:var(--color-muted)">Ventas proyectadas</p>
+                            <h5 class="mb-0 fw-bold" style="color:var(--color-text)" id="proj_ventas_total">—</h5>
+                        </div>
+                    </div>
+                </div>
+
+                {# Tabla mes a mes #}
+                <div id="proj_tabla_contenedor" style="max-height:200px;overflow-y:auto;font-size:12px;border-radius:8px;border:1px solid rgba(124,58,237,.15)">
+                    <table class="table table-sm mb-0" style="color:var(--color-text)">
+                        <thead style="font-size:11px;position:sticky;top:0;background:var(--color-surface);border-bottom:1px solid rgba(124,58,237,.15)">
+                            <tr>
+                                <th class="py-2 ps-3" style="color:var(--color-muted)">Mes</th>
+                                <th class="py-2 text-end" style="color:var(--color-muted)">Ventas est.</th>
+                                <th class="py-2 text-end pe-3" style="color:var(--color-muted)">Utilidad est.</th>
+                            </tr>
+                        </thead>
+                        <tbody id="proj_tabla_body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>{# /row #}
+
+    {# ── EVOLUCIÓN MENSUAL HISTÓRICA ────────────────────────────────── #}
+    <div class="glass-card p-3 p-md-4 mt-4 mb-4">
+        <h6 class="fw-bold mb-3" style="color:var(--color-text)">
+            <i class="fas fa-chart-bar me-2" style="color:#0ea5e9"></i>Evolución mensual de utilidad
+        </h6>
+
+        {# MÓVIL: cards apiladas #}
+        <div class="d-lg-none">
+            {% for mes in utilidad_mensual %}
+            <div class="d-flex justify-content-between align-items-center py-2"
+                 style="border-bottom:1px solid rgba(124,58,237,.1)">
+                <div>
+                    <span class="fw-semibold small" style="color:var(--color-text)">{{ mes.nombre_mes }}</span>
+                    <div class="mt-1">
+                        <span class="small me-2" style="color:var(--color-muted)">Ing: <strong style="color:#16a34a">${{ mes.ingresos|floatformat:0 }}</strong></span>
+                        <span class="small" style="color:var(--color-muted)">Costo: <strong style="color:var(--color-text)">${{ mes.costo|floatformat:0 }}</strong></span>
+                    </div>
+                </div>
+                <div class="text-end flex-shrink-0 ms-2">
+                    <div class="fw-bold" style="color:#7c3aed">${{ mes.utilidad|floatformat:0 }}</div>
+                    <small style="color:{% if mes.margen >= 30 %}#16a34a{% elif mes.margen >= 10 %}#d97706{% else %}#dc2626{% endif %}">{{ mes.margen|floatformat:1 }}%</small>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-center py-4" style="color:var(--color-muted)">Sin datos históricos disponibles.</p>
+            {% endfor %}
+        </div>
+
+        {# DESKTOP: tabla #}
+        <div class="d-none d-lg-block table-responsive">
+            <table class="table mb-0 align-middle" style="color:var(--color-text);font-size:13px">
+                <thead style="font-size:11px;text-transform:uppercase;letter-spacing:.05em">
+                    <tr style="border-bottom:1px solid rgba(124,58,237,.15)">
+                        <th class="ps-3 py-2 fw-semibold" style="color:var(--color-muted)">Mes</th>
+                        <th class="py-2 fw-semibold text-end" style="color:var(--color-muted)">Ingresos</th>
+                        <th class="py-2 fw-semibold text-end" style="color:var(--color-muted)">Costo</th>
+                        <th class="py-2 fw-semibold text-end" style="color:var(--color-muted)">Utilidad Bruta</th>
+                        <th class="pe-3 py-2 fw-semibold text-end" style="color:var(--color-muted)">Margen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mes in utilidad_mensual %}
+                    <tr style="border-bottom:1px solid rgba(124,58,237,.08)">
+                        <td class="ps-3 py-2 fw-semibold" style="color:var(--color-text)">{{ mes.nombre_mes }}</td>
+                        <td class="py-2 text-end" style="color:#16a34a">${{ mes.ingresos|floatformat:0 }}</td>
+                        <td class="py-2 text-end" style="color:var(--color-muted)">${{ mes.costo|floatformat:0 }}</td>
+                        <td class="py-2 text-end fw-bold" style="color:#7c3aed">${{ mes.utilidad|floatformat:0 }}</td>
+                        <td class="pe-3 py-2 text-end fw-semibold"
+                            style="color:{% if mes.margen >= 30 %}#16a34a{% elif mes.margen >= 10 %}#d97706{% else %}#dc2626{% endif %}">
+                            {{ mes.margen|floatformat:1 }}%
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-center py-4" style="color:var(--color-muted)">Sin datos históricos disponibles.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function calcularProyeccion() {
+    const ventas = parseFloat(document.getElementById('proj_ventas').value)     || 0;
+    const margen = parseFloat(document.getElementById('proj_margen').value)     || 0;
+    const crec   = parseFloat(document.getElementById('proj_crecimiento').value)|| 0;
+    const meses  = parseInt(document.getElementById('proj_meses').value)         || 6;
+
+    const fmt = n => '$' + Math.round(n).toLocaleString('es-CO');
+    const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const hoy = new Date();
+
+    let totalVentas = 0, totalUtilidad = 0, rows = '';
+
+    for (let i = 0; i < meses; i++) {
+        const vMes = ventas * Math.pow(1 + crec / 100, i);
+        const uMes = vMes * (margen / 100);
+        totalVentas   += vMes;
+        totalUtilidad += uMes;
+        const mesNombre = MESES[(hoy.getMonth() + 1 + i) % 12];
+        rows += `<tr style="border-bottom:1px solid rgba(124,58,237,.08)">
+            <td class="ps-3 py-1" style="color:var(--color-muted)">${mesNombre} +${i+1}</td>
+            <td class="text-end py-1" style="color:#16a34a">${fmt(vMes)}</td>
+            <td class="text-end pe-3 py-1 fw-semibold" style="color:#7c3aed">${fmt(uMes)}</td>
+        </tr>`;
+    }
+
+    document.getElementById('proj_resultado').textContent    = fmt(totalUtilidad);
+    document.getElementById('proj_ventas_total').textContent = fmt(totalVentas);
+    document.getElementById('proj_tabla_body').innerHTML     = rows;
+}
+
+document.addEventListener('DOMContentLoaded', calcularProyeccion);
+</script>
+{% endblock %}
