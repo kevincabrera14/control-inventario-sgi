@@ -102,7 +102,7 @@ STATIC_ROOT.mkdir(parents=True, exist_ok=True)  # Crea el dir si no existe → e
 _app_static = BASE_DIR / 'app' / 'static'
 STATICFILES_DIRS = [_app_static] if _app_static.exists() else []
 
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
