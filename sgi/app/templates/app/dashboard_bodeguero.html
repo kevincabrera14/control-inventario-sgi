@@ -10,17 +10,13 @@
 
     <!-- ============================================================
          CABECERA  —  mobile-first
-         Fila única en móvil: [título] [buscar+📷] [⚡]
-         En desktop se expande a 3 columnas cómodas.
     ============================================================ -->
     <div class="row mb-3 align-items-center g-2">
 
-      <!-- Título -->
       <div class="col-12 col-md-3 mb-1 mb-md-0">
         <h2 class="mb-0 fs-4">Punto de Venta</h2>
       </div>
 
-      <!-- Búsqueda + botón cámara separado -->
       <div class="col col-md-6">
         <div class="d-flex gap-2">
           <div class="input-group">
@@ -32,7 +28,6 @@
               Buscar
             </button>
           </div>
-          <!-- Botón cámara: separado del input-group para que no quede pegado -->
           <button class="btn btn-warning fw-bold px-3 flex-shrink-0"
                   id="btnCamara"
                   onclick="abrirEscaner()"
@@ -43,12 +38,10 @@
         </div>
       </div>
 
-      <!-- Acciones -->
       <div class="col-auto col-md-3 text-end">
         <div class="dropdown">
           <button class="btn btn-secondary dropdown-toggle" type="button"
                   data-bs-toggle="dropdown" aria-expanded="false">
-            <!-- Sólo icono en móvil, texto en desktop -->
             <i class="fas fa-bolt d-md-none"></i>
             <span class="d-none d-md-inline"><i class="fas fa-bolt me-1"></i>Acciones</span>
           </button>
@@ -97,7 +90,7 @@
         </div>
       </div>
 
-    </div><!-- /row cabecera -->
+    </div>
 
     <!-- ============================================================
          MODAL  —  escáner de cámara
@@ -160,8 +153,9 @@
                      data-id="{{ producto.pk }}"
                      value="1" min="1" max="{{ producto.stock_actual }}"
                      inputmode="numeric">
+              <!-- El stock está entre comillas para que JS lo lea correctamente -->
               <button class="btn btn-primary btn-sm w-100"
-                      onclick="agregarAlCarrito('{{ producto.pk }}', '{{ producto.nombre|escapejs }}', {{ producto.stock_actual }})">
+                      onclick="agregarAlCarrito('{{ producto.pk }}', '{{ producto.nombre|escapejs }}', '{{ producto.stock_actual }}')">
                 Agregar
               </button>
             </div>
@@ -171,7 +165,7 @@
       {% endfor %}
     </div>
 
-  </div><!-- /pos-content -->
+  </div>
 
   <!-- ============================================================
        PANEL DEL CARRITO
@@ -193,15 +187,15 @@
     </div>
   </div>
 
-</div><!-- /pos-wrapper -->
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
-// Mapa offline de productos indexados por código de barras
+// Mapa offline
 const PRODUCTOS_MAP = {
-  {% for producto in productos %}{% if producto.codigo_barras %}"{{ producto.codigo_barras }}": { id: "{{ producto.pk }}", nombre: "{{ producto.nombre|escapejs }}", stock: {{ producto.stock_actual }} },{% endif %}{% endfor %}
+  {% for producto in productos %}{% if producto.codigo_barras %}"{{ producto.codigo_barras }}": { id: "{{ producto.pk }}", nombre: "{{ producto.nombre|escapejs }}", stock: "{{ producto.stock_actual }}" },{% endif %}{% endfor %}
 };
 
 // ── 1. BÚSQUEDA MANUAL ───────────────────────────────────────────────
@@ -249,7 +243,6 @@ function abrirEscaner() {
       : new bootstrap.Modal(modalEl);
     modal.show();
   } else {
-    // Fallback: mostrar manualmente si Bootstrap no está listo
     modalEl.classList.add('show');
     modalEl.style.display = 'block';
     document.body.classList.add('modal-open');
@@ -342,14 +335,16 @@ function agregarAlCarrito(id, nombre, stockDisponible, cantidadOverride, silenci
     return false;
   }
 
+  const stockF = parseFloat(stockDisponible.toString().replace(',', '.'));
+
   const itemExistente = cart.find(item => item.producto_id === id);
   const cantidadTotal = itemExistente ? itemExistente.cantidad + cantidad : cantidad;
 
-  if (cantidadTotal > parseFloat(stockDisponible)) {
+  if (cantidadTotal > stockF) {
     if (silencioso) {
       setEscanerStatus('⚠ Stock insuficiente para ' + nombre + '.', 'text-warning');
     } else {
-      alert('Stock insuficiente. Solo hay ' + stockDisponible + ' unidades disponibles.');
+      alert('Stock insuficiente. Solo hay ' + stockF + ' unidades disponibles.');
     }
     return false;
   }
@@ -380,7 +375,8 @@ function renderCart() {
   }
   let html = '<ul class="list-group list-group-flush">';
   cart.forEach((item, index) => {
-    html += '<li class="list-group-item bg-transparent text-white px-0 d-flex justify-content-between align-items-center" style="border-color:#374151;">'
+    // TEXT-DARK para que se vea sobre el fondo blanco
+    html += '<li class="list-group-item bg-transparent text-dark px-0 d-flex justify-content-between align-items-center" style="border-color:#e2e8f0;">'
           + '<div><div class="fw-bold" style="font-size:0.9rem;">' + item.nombre + '</div>'
           + '<small class="text-muted">Cantidad: ' + item.cantidad + '</small></div>'
           + '<button class="btn btn-sm btn-outline-danger" onclick="eliminarDelCarrito(' + index + ')">✕</button>'
