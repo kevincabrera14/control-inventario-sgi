@@ -39,7 +39,7 @@ class ProductoForm(forms.ModelForm):
 
     class Meta:
         model = Producto
-        fields = '__all__'
+        exclude = ['negocio']   # negocio se asigna automáticamente desde el perfil del usuario
         widgets = {
             'descripcion': forms.Textarea(
                 attrs={'class': 'form-control', 'rows': 3}

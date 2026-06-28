@@ -1,0 +1,196 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Etiquetas de Códigos de Barras</title>
+    <style>
+        /* ── RESET ──────────────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f5f5f5;
+            color: #000;
+        }
+
+        /* ── CONTROLES (solo en pantalla, no al imprimir) ────────── */
+        .print-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+            padding: 0.75rem 1.25rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .print-controls h2 {
+            font-size: 1rem;
+            font-weight: 700;
+            flex: 1;
+        }
+        .print-controls label {
+            font-size: .85rem;
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+        }
+        .print-controls input[type="number"] {
+            width: 60px;
+            padding: .25rem .4rem;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: .85rem;
+        }
+        .btn-print {
+            background: #7c3aed;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: .45rem 1.2rem;
+            font-size: .9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-print:hover { background: #6d28d9; }
+        .btn-back {
+            background: none;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: .45rem .9rem;
+            font-size: .85rem;
+            cursor: pointer;
+        }
+
+        /* ── HOJA DE ETIQUETAS ────────────────────────────────────── */
+        .hoja {
+            max-width: 210mm;        /* A4 */
+            margin: 1.5rem auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6mm;
+            padding: 8mm;
+            background: #fff;
+        }
+
+        /* ── ETIQUETA INDIVIDUAL ──────────────────────────────────── */
+        .etiqueta {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 5mm 4mm 3mm;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            background: #fff;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+        .etiqueta-nombre {
+            font-size: 9pt;
+            font-weight: 700;
+            color: #1e1b4b;
+            margin-bottom: 3mm;
+            line-height: 1.2;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .etiqueta-svg {
+            width: 100%;
+            max-width: 55mm;
+        }
+        .etiqueta-svg svg {
+            width: 100% !important;
+            height: auto !important;
+        }
+        .etiqueta-codigo {
+            font-size: 7pt;
+            color: #666;
+            margin-top: 2mm;
+            letter-spacing: .05em;
+            font-family: 'Courier New', monospace;
+        }
+        .etiqueta-precio {
+            font-size: 8pt;
+            font-weight: 700;
+            color: #7c3aed;
+            margin-top: 2mm;
+        }
+
+        /* ── INFO CUANDO NO HAY ETIQUETAS ─────────────────────────── */
+        .hoja-empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 3rem;
+            color: #999;
+        }
+
+        /* ── IMPRESIÓN ────────────────────────────────────────────── */
+        @media print {
+            body { background: #fff; }
+            .print-controls { display: none !important; }
+            .hoja {
+                margin: 0;
+                max-width: 100%;
+                padding: 5mm;
+                gap: 4mm;
+            }
+            .etiqueta {
+                border: 0.5px solid #bbb;
+            }
+        }
+
+        /* ── RESPONSIVE: 2 cols en pantallas pequeñas ─────────────── */
+        @media (max-width: 600px) {
+            .hoja { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    {# ── BARRA DE CONTROLES (solo en pantalla) ─────────────────────── #}
+    <div class="print-controls">
+        <h2>🖨️ Hoja de Etiquetas — {{ etiquetas|length }} etiqueta(s)</h2>
+        <label>
+            Copias por etiqueta:
+            <input type="number" id="copiasInput" value="{{ copias }}" min="1" max="20">
+        </label>
+        <button class="btn-back" onclick="history.back()">← Volver</button>
+        <button class="btn-print" onclick="window.print()">Imprimir</button>
+    </div>
+
+    {# ── HOJA ────────────────────────────────────────────────────────── #}
+    <div class="hoja" id="hoja">
+        {% for et in etiquetas %}
+        <div class="etiqueta">
+            <div class="etiqueta-nombre" title="{{ et.producto.nombre }}">{{ et.producto.nombre }}</div>
+            <div class="etiqueta-svg">{{ et.svg|safe }}</div>
+            <div class="etiqueta-codigo">{{ et.producto.codigo_barras }}</div>
+            {% if et.producto.precio_venta %}
+            <div class="etiqueta-precio">${{ et.producto.precio_venta|floatformat:0 }}</div>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="hoja-empty">
+            <p>No hay etiquetas para mostrar.</p>
+            <p style="font-size:.85rem;margin-top:.5rem">Asegúrate de que los productos tengan código de barras asignado.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <script>
+    // Cambiar copias dinámicamente sin recargar
+    document.getElementById('copiasInput').addEventListener('change', function() {
+        const copias = Math.max(1, parseInt(this.value) || 1);
+        const params = new URLSearchParams(window.location.search);
+        params.set('copias', copias);
+        window.location.search = params.toString();
+    });
+    </script>
+</body>
+</html>

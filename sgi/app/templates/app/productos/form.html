@@ -1,10 +1,224 @@
 {% extends 'app/base.html' %}
-{% block title %}{% if view.object %}Editar Producto{% else %}Nuevo Producto{% endif %}{% endblock %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Editar Producto{% else %}Nuevo Producto{% endif %}{% endblock %}
+
 {% block content %}
-<h2>{% if view.object %}Editar Producto{% else %}Nuevo Producto{% endif %}</h2>
-<form method="post" enctype="multipart/form-data">
+<div class="container-fluid py-4" style="max-width:820px;">
+
+  <div class="d-flex align-items-center mb-4 gap-3">
+    <a href="{% url 'producto-list' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="fas fa-arrow-left"></i>
+    </a>
+    <h3 class="mb-0">
+      {% if form.instance.pk %}Editar producto{% else %}Nuevo producto{% endif %}
+    </h3>
+  </div>
+
+  <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">{% if view.object %}Actualizar{% else %}Crear{% endif %}</button>
-</form>
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="card shadow-sm">
+      <div class="card-body">
+
+        <!-- Campo: Código de barras con escáner de cámara -->
+        <div class="mb-4">
+          <label for="{{ form.codigo_barras.id_for_label }}" class="form-label fw-semibold">
+            <i class="fas fa-barcode me-1"></i> Código de barras
+            <span class="text-danger">*</span>
+          </label>
+
+          <div class="input-group">
+            {{ form.codigo_barras }}
+            <button type="button" class="btn btn-outline-secondary" id="btnAbrirCamara"
+                    title="Escanear con cámara">
+              <i class="fas fa-camera"></i> Escanear
+            </button>
+          </div>
+
+          <!-- Zona del escáner (oculta por defecto) -->
+          <div id="scanner-container" class="mt-3 d-none">
+            <div class="border rounded overflow-hidden">
+              <div id="qr-reader-form" style="width:100%;"></div>
+              <div id="scan-status" class="text-center py-2 small text-muted">
+                Apunta al código de barras…
+              </div>
+            </div>
+            <div class="d-flex gap-2 mt-2 align-items-center">
+              <button type="button" class="btn btn-sm btn-outline-danger" id="btnCerrarCamara">
+                <i class="fas fa-times me-1"></i>Cerrar cámara
+              </button>
+              <span class="text-muted small">El código se escribe automáticamente en el campo de arriba.</span>
+            </div>
+          </div>
+
+          <!-- Preview del código -->
+          <div id="barcode-preview" class="mt-3 text-center d-none">
+            <div class="border rounded p-3 bg-white d-inline-block">
+              <div id="barcode-svg-container"></div>
+              <small class="text-muted d-block mt-1" id="barcode-label"></small>
+            </div>
+            <p class="text-success small mt-2">
+              <i class="fas fa-check-circle"></i> Código listo para guardar
+            </p>
+          </div>
+
+          {% if form.codigo_barras.errors %}
+          <div class="invalid-feedback d-block">{{ form.codigo_barras.errors }}</div>
+          {% endif %}
+          <div class="form-text">
+            Puedes escribirlo manualmente, escanearlo con la cámara o pasarlo con un lector USB/Bluetooth.
+          </div>
+        </div>
+
+        <hr class="my-3">
+
+        <!-- Resto de campos del formulario (excluye codigo_barras) -->
+        {% for field in form %}
+          {% if field.name != 'codigo_barras' %}
+          <div class="mb-3">
+            <label for="{{ field.id_for_label }}" class="form-label fw-semibold">
+              {{ field.label }}
+              {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+            </label>
+            {{ field }}
+            {% if field.errors %}
+            <div class="invalid-feedback d-block">{{ field.errors }}</div>
+            {% endif %}
+            {% if field.help_text %}
+            <div class="form-text">{{ field.help_text }}</div>
+            {% endif %}
+          </div>
+          {% endif %}
+        {% endfor %}
+
+      </div><!-- /card-body -->
+
+      <div class="card-footer d-flex gap-2 justify-content-end">
+        <a href="{% url 'producto-list' %}" class="btn btn-outline-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save me-1"></i>
+          {% if form.instance.pk %}Guardar cambios{% else %}Crear producto{% endif %}
+        </button>
+      </div>
+    </div><!-- /card -->
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+var codigoInput      = document.getElementById('{{ form.codigo_barras.id_for_label }}');
+var scannerContainer = document.getElementById('scanner-container');
+var barcodePreview   = document.getElementById('barcode-preview');
+var barcodeSvgDiv    = document.getElementById('barcode-svg-container');
+var barcodeLabel     = document.getElementById('barcode-label');
+var scanStatus       = document.getElementById('scan-status');
+
+var html5QrCode = null;
+var escanerVivo = false;
+
+document.getElementById('btnAbrirCamara').addEventListener('click', function() {
+  if (escanerVivo) { detenerCamara(); return; }
+  scannerContainer.classList.remove('d-none');
+  iniciarCamara();
+});
+
+document.getElementById('btnCerrarCamara').addEventListener('click', detenerCamara);
+
+function iniciarCamara() {
+  html5QrCode = new Html5Qrcode("qr-reader-form");
+  var config = {
+    fps: 12,
+    qrbox: { width: 280, height: 110 },
+    aspectRatio: 1.7,
+    formatsToSupport: [
+      Html5QrcodeSupportedFormats.CODE_128,
+      Html5QrcodeSupportedFormats.EAN_13,
+      Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.UPC_A,
+      Html5QrcodeSupportedFormats.UPC_E,
+      Html5QrcodeSupportedFormats.CODE_39,
+      Html5QrcodeSupportedFormats.ITF,
+      Html5QrcodeSupportedFormats.QR_CODE,
+    ],
+  };
+  html5QrCode.start(
+    { facingMode: "environment" },
+    config,
+    onCodigoLeido,
+    function() {}
+  ).then(function() {
+    escanerVivo = true;
+    setScanStatus('Listo. Apunta al código de barras…', 'text-muted');
+    document.getElementById('btnAbrirCamara').innerHTML = '<i class="fas fa-camera-slash"></i> Cerrar';
+  }).catch(function(err) {
+    setScanStatus('No se pudo acceder a la cámara: ' + err, 'text-danger');
+  });
+}
+
+function detenerCamara() {
+  if (html5QrCode && escanerVivo) {
+    html5QrCode.stop().catch(function() {});
+    escanerVivo = false;
+  }
+  scannerContainer.classList.add('d-none');
+  document.getElementById('btnAbrirCamara').innerHTML = '<i class="fas fa-camera"></i> Escanear';
+}
+
+function onCodigoLeido(codigo) {
+  if (navigator.vibrate) navigator.vibrate(80);
+  codigoInput.value = codigo.trim();
+  codigoInput.classList.add('is-valid');
+  setTimeout(function() { codigoInput.classList.remove('is-valid'); }, 2000);
+  setScanStatus('✓ Código capturado: ' + codigo, 'text-success');
+  mostrarPreviewCodigo(codigo.trim());
+  setTimeout(detenerCamara, 800);
+}
+
+function setScanStatus(msg, cls) {
+  scanStatus.textContent = msg;
+  scanStatus.className = 'text-center py-2 small ' + cls;
+}
+
+function mostrarPreviewCodigo(codigo) {
+  if (!codigo) { barcodePreview.classList.add('d-none'); return; }
+  {% if form.instance.pk %}
+  fetch("{% url 'barcode-svg' form.instance.pk %}")
+    .then(function(r) { return r.ok ? r.text() : Promise.reject(); })
+    .then(function(svg) {
+      barcodeSvgDiv.innerHTML = svg;
+      barcodeLabel.textContent = codigo;
+      barcodePreview.classList.remove('d-none');
+    })
+    .catch(function() { mostrarPreviewTexto(codigo); });
+  {% else %}
+  mostrarPreviewTexto(codigo);
+  {% endif %}
+}
+
+function mostrarPreviewTexto(codigo) {
+  barcodeSvgDiv.innerHTML = '<div class="px-4 py-2 border border-secondary rounded text-center" style="font-family:monospace;font-size:1.3rem;letter-spacing:4px;">'
+    + codigo.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    + '</div>';
+  barcodeLabel.textContent = codigo;
+  barcodePreview.classList.remove('d-none');
+}
+
+codigoInput.addEventListener('input', function() {
+  var val = codigoInput.value.trim();
+  if (val.length >= 4) mostrarPreviewCodigo(val);
+  else barcodePreview.classList.add('d-none');
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  var val = codigoInput.value.trim();
+  if (val) mostrarPreviewCodigo(val);
+});
+</script>
 {% endblock %}

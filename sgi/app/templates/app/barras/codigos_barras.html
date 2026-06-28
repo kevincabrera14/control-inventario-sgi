@@ -1,0 +1,332 @@
+{% extends 'app/base.html' %}
+{% load static %}
+
+{% block title %}Códigos de Barras{% endblock %}
+
+{% block content %}
+<div class="barras-wrapper">
+
+    {# ── ENCABEZADO ─────────────────────────────────────────────────── #}
+    <div class="barras-header">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb-simple">
+                    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li>Códigos de Barras</li>
+                </ol>
+            </nav>
+            <h2 class="barras-title">Códigos de Barras</h2>
+            <p class="barras-subtitle">Genera, escanea e imprime etiquetas de tus productos</p>
+        </div>
+
+        {# Botón principal: abrir escáner de cámara #}
+        <button class="btn-scanner" id="btnAbrirScanner" onclick="abrirScanner()">
+            <i class="fas fa-camera"></i>
+            <span>Escanear</span>
+        </button>
+    </div>
+
+    {# ── KPIs ────────────────────────────────────────────────────────── #}
+    <div class="barras-kpis">
+        <div class="bkpi bkpi--purple">
+            <i class="fas fa-boxes"></i>
+            <div>
+                <span class="bkpi-val">{{ total }}</span>
+                <span class="bkpi-lbl">Total productos</span>
+            </div>
+        </div>
+        <div class="bkpi bkpi--green">
+            <i class="fas fa-barcode"></i>
+            <div>
+                <span class="bkpi-val">{{ con_codigo }}</span>
+                <span class="bkpi-lbl">Con código</span>
+            </div>
+        </div>
+        <a href="?sin_codigo=1" class="bkpi bkpi--amber bkpi--link">
+            <i class="fas fa-exclamation-circle"></i>
+            <div>
+                <span class="bkpi-val">{{ sin_codigo_count }}</span>
+                <span class="bkpi-lbl">Sin código</span>
+            </div>
+        </a>
+    </div>
+
+    {# ── ESCÁNER DE CÁMARA (oculto por defecto) ──────────────────────── #}
+    <div class="scanner-panel" id="scannerPanel" style="display:none">
+        <div class="scanner-header">
+            <span class="scanner-title"><i class="fas fa-camera me-2"></i>Escáner de Cámara</span>
+            <button class="scanner-close" onclick="cerrarScanner()">✕</button>
+        </div>
+
+        {# Área del video #}
+        <div class="scanner-video-wrap" id="scannerVideoWrap">
+            <video id="scannerVideo" playsinline autoplay muted></video>
+            <div class="scanner-overlay">
+                <div class="scanner-crosshair"></div>
+                <p class="scanner-hint">Apunta el código de barras al recuadro</p>
+            </div>
+            <canvas id="scannerCanvas" style="display:none"></canvas>
+        </div>
+
+        {# Resultado del escaneo #}
+        <div id="scannerResult" class="scanner-result" style="display:none"></div>
+
+        {# Selector de cámara #}
+        <div class="scanner-controls">
+            <select id="cameraSelect" class="form-select form-select-sm" onchange="cambiarCamara(this.value)">
+                <option value="">Cargando cámaras…</option>
+            </select>
+            <button class="btn-scanner-alt" onclick="cerrarScanner()">
+                <i class="fas fa-times me-1"></i>Cancelar
+            </button>
+        </div>
+    </div>
+
+    {# ── FILTROS Y BÚSQUEDA ──────────────────────────────────────────── #}
+    <form method="GET" class="barras-filtros">
+        <div class="barras-search-wrap">
+            <i class="fas fa-search barras-search-icon"></i>
+            <input type="text" name="q" class="barras-search" placeholder="Buscar por nombre o código…"
+                   value="{{ search }}" autocomplete="off">
+            {% if search %}<a href="?" class="barras-search-clear">✕</a>{% endif %}
+        </div>
+        <div class="barras-filtro-checks">
+            <label class="barras-check-label">
+                <input type="checkbox" name="sin_codigo" value="1" onchange="this.form.submit()"
+                       {% if sin_codigo %}checked{% endif %}>
+                Solo sin código
+            </label>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
+
+        {# Botón imprimir seleccionados #}
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="btnImprimirSel"
+                onclick="imprimirSeleccionados()" style="display:none">
+            <i class="fas fa-print me-1"></i><span id="lblSel">Imprimir (0)</span>
+        </button>
+    </form>
+
+    {# ── GRID DE PRODUCTOS CON CÓDIGOS ──────────────────────────────── #}
+    <div class="barras-grid" id="barrasGrid">
+        {% for item in productos_data %}
+        <div class="barras-card {% if not item.svg %}barras-card--sin-codigo{% endif %}"
+             data-id="{{ item.producto.pk }}">
+
+            {# Checkbox para selección múltiple #}
+            <label class="barras-select-check">
+                <input type="checkbox" class="barras-check-input"
+                       value="{{ item.producto.pk }}"
+                       onchange="actualizarSeleccion()"
+                       {% if not item.svg %}disabled{% endif %}>
+            </label>
+
+            <div class="barras-card-body">
+                <div class="barras-card-nombre">{{ item.producto.nombre }}</div>
+
+                {% if item.svg %}
+                    {# SVG del código de barras inline #}
+                    <div class="barras-svg-wrap">
+                        {{ item.svg|safe }}
+                    </div>
+                    <div class="barras-codigo-text">{{ item.producto.codigo_barras }}</div>
+
+                    {# Acciones #}
+                    <div class="barras-card-actions">
+                        <a href="{% url 'barcode-svg' item.producto.pk %}?download=1"
+                           class="barras-btn barras-btn--dl" title="Descargar SVG">
+                            <i class="fas fa-download"></i> SVG
+                        </a>
+                        <a href="{% url 'producto-update' item.producto.pk %}"
+                           class="barras-btn barras-btn--edit" title="Editar producto">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+                    </div>
+
+                {% else %}
+                    {# Sin código asignado #}
+                    <div class="barras-sin-codigo">
+                        <i class="fas fa-barcode"></i>
+                        <span>Sin código de barras</span>
+                    </div>
+                    <a href="{% url 'producto-update' item.producto.pk %}"
+                       class="barras-btn barras-btn--asignar w-100">
+                        <i class="fas fa-plus me-1"></i>Asignar código
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="barras-empty">
+            <i class="fas fa-barcode"></i>
+            <p>No hay productos que coincidan.</p>
+            <a href="?" class="btn btn-sm btn-outline-secondary">Limpiar filtros</a>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>{# /barras-wrapper #}
+
+{# Toast de resultado de escaneo #}
+<div id="scanToast" class="scan-toast" style="display:none">
+    <div id="scanToastContent"></div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+{# ZXing para decodificación de código de barras desde cámara #}
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@latest/umd/index.min.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// ESCÁNER DE CÁMARA (ZXing)
+// ═══════════════════════════════════════════════════════════
+
+let codeReader = null;
+let scannerActivo = false;
+let streamActual = null;
+
+async function abrirScanner() {
+    document.getElementById('scannerPanel').style.display = 'block';
+    document.getElementById('scannerPanel').scrollIntoView({behavior:'smooth', block:'start'});
+    await iniciarScanner();
+}
+
+function cerrarScanner() {
+    document.getElementById('scannerPanel').style.display = 'none';
+    detenerScanner();
+}
+
+async function iniciarScanner(deviceId = undefined) {
+    if (scannerActivo) detenerScanner();
+
+    try {
+        codeReader = new ZXing.BrowserMultiFormatReader();
+
+        // Listar cámaras disponibles
+        const devices = await codeReader.listVideoInputDevices();
+        const select = document.getElementById('cameraSelect');
+        select.innerHTML = '';
+
+        devices.forEach((d, i) => {
+            const opt = document.createElement('option');
+            opt.value = d.deviceId;
+            opt.text  = d.label || `Cámara ${i + 1}`;
+            // Preferir cámara trasera por defecto
+            if (d.label && d.label.toLowerCase().includes('back')) opt.selected = true;
+            select.appendChild(opt);
+        });
+
+        const targetDevice = deviceId || (devices.find(d => d.label.toLowerCase().includes('back')) || devices[0])?.deviceId;
+        scannerActivo = true;
+
+        await codeReader.decodeFromVideoDevice(
+            targetDevice,
+            document.getElementById('scannerVideo'),
+            async (result, err) => {
+                if (result) {
+                    const codigo = result.getText();
+                    // Feedback visual
+                    document.getElementById('scannerPanel').classList.add('scanner--found');
+                    setTimeout(() => document.getElementById('scannerPanel').classList.remove('scanner--found'), 600);
+                    // Buscar en el servidor
+                    await buscarProductoPorCodigo(codigo);
+                }
+            }
+        );
+
+    } catch (e) {
+        mostrarResultadoScanner('error', `Error al iniciar cámara: ${e.message || e}`);
+    }
+}
+
+function detenerScanner() {
+    if (codeReader) {
+        codeReader.reset();
+        codeReader = null;
+    }
+    scannerActivo = false;
+}
+
+async function cambiarCamara(deviceId) {
+    if (!deviceId) return;
+    detenerScanner();
+    await iniciarScanner(deviceId);
+}
+
+// ═══════════════════════════════════════════════════════════
+// BÚSQUEDA POR CÓDIGO (llama al endpoint Django)
+// ═══════════════════════════════════════════════════════════
+
+async function buscarProductoPorCodigo(codigo) {
+    try {
+        const resp = await fetch(`{% url 'buscar-por-codigo' %}?codigo=${encodeURIComponent(codigo)}`);
+        const data = await resp.json();
+
+        if (data.found) {
+            mostrarResultadoScanner('success', `
+                <div class="scan-res-nombre">${data.nombre}</div>
+                <div class="scan-res-meta">
+                    <span>📦 Stock: <strong>${data.stock_actual}</strong></span>
+                    <span>💰 Precio: <strong>$${Number(data.precio_venta).toLocaleString('es-CO')}</strong></span>
+                </div>
+                ${data.stock_bajo ? '<div class="scan-res-alerta">⚠️ Stock bajo</div>' : ''}
+                <div class="scan-res-codigo">${codigo}</div>
+            `);
+            mostrarToast('success', `✔ ${data.nombre}`);
+        } else {
+            mostrarResultadoScanner('notfound', `
+                <i class="fas fa-times-circle"></i>
+                Código <strong>${codigo}</strong> no encontrado en el inventario.
+            `);
+            mostrarToast('error', `✘ Código no encontrado`);
+        }
+    } catch(e) {
+        mostrarResultadoScanner('error', 'Error de conexión con el servidor.');
+    }
+}
+
+function mostrarResultadoScanner(tipo, html) {
+    const el = document.getElementById('scannerResult');
+    el.style.display = 'block';
+    el.className = `scanner-result scanner-result--${tipo}`;
+    el.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════
+// TOAST de notificación
+// ═══════════════════════════════════════════════════════════
+function mostrarToast(tipo, msg) {
+    const t = document.getElementById('scanToast');
+    const c = document.getElementById('scanToastContent');
+    t.className = `scan-toast scan-toast--${tipo}`;
+    c.textContent = msg;
+    t.style.display = 'flex';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => { t.style.display = 'none'; }, 3000);
+}
+
+// ═══════════════════════════════════════════════════════════
+// SELECCIÓN MÚLTIPLE E IMPRESIÓN
+// ═══════════════════════════════════════════════════════════
+function actualizarSeleccion() {
+    const checks = document.querySelectorAll('.barras-check-input:checked');
+    const btn    = document.getElementById('btnImprimirSel');
+    const lbl    = document.getElementById('lblSel');
+
+    if (checks.length > 0) {
+        btn.style.display = 'inline-flex';
+        lbl.textContent   = `Imprimir (${checks.length})`;
+    } else {
+        btn.style.display = 'none';
+    }
+}
+
+function imprimirSeleccionados() {
+    const ids = [...document.querySelectorAll('.barras-check-input:checked')]
+                    .map(c => c.value).join('-');
+    if (!ids) return;
+    window.open(`{% url 'hoja-impresion-barras' '0' %}`.replace('/0/', `/${ids}/`), '_blank');
+}
+</script>
+{% endblock %}

@@ -1164,3 +1164,257 @@ def gerente_utilidades(request):
         'fecha_hasta':      fecha_hasta_obj.strftime('%Y-%m-%d'),
         'periodo':          periodo,
     })
+
+# ─────────────────────────────────────────────────────────────────────────────
+# VISTAS DE CÓDIGOS DE BARRAS
+# Agregar en views.py (sin borrar nada existente)
+#
+# Dependencia: pip install python-barcode pillow
+#
+# En urls.py agregar:
+#   path('codigos-barras/',                views.codigos_barras,          name='codigos-barras'),
+#   path('codigos-barras/svg/<int:pk>/',   views.barcode_svg,             name='barcode-svg'),
+#   path('codigos-barras/buscar/',         views.buscar_por_codigo,       name='buscar-por-codigo'),
+#   path('codigos-barras/hoja/<str:ids>/', views.hoja_impresion_barras,   name='hoja-impresion-barras'),
+# ─────────────────────────────────────────────────────────────────────────────
+
+import io
+import re
+from django.http import HttpResponse, JsonResponse
+from django.contrib.auth.decorators import login_required
+
+# python-barcode (pip install python-barcode pillow)
+from barcode import Code128
+from barcode.writer import SVGWriter
+
+
+# ── HELPERS ───────────────────────────────────────────────────────────────────
+
+def _get_negocio(request):
+    """Devuelve el negocio del usuario o None."""
+    perfil = getattr(request.user, 'perfil', None)
+    return perfil.negocio if perfil else None
+
+
+def _generar_svg_barcode(codigo: str) -> str:
+    """
+    Genera el SVG de un código Code-128 y devuelve el string SVG limpio
+    (sin la cabecera XML <?xml ...?> para poder incrustarlo en HTML).
+    """
+    buf = io.BytesIO()
+    options = {
+        'write_text': True,
+        'font_size':  10,
+        'text_distance': 4,
+        'quiet_zone': 4,
+        'module_height': 14,
+        'module_width': 0.9,
+    }
+    Code128(codigo, writer=SVGWriter()).write(buf, options=options)
+    svg_bytes = buf.getvalue().decode('utf-8')
+
+    # Quitar cabecera XML, DOCTYPE y comentarios ANTES del <svg>
+    # para poder incrustar el SVG inline en el HTML sin que Django
+    # lo muestre como texto plano. Usar |safe en el template.
+    svg_bytes = re.sub(r'<\?xml[^?]*\?>', '', svg_bytes, flags=re.DOTALL)
+    svg_bytes = re.sub(r'<!DOCTYPE[^>]*>', '', svg_bytes, flags=re.DOTALL | re.IGNORECASE)
+    svg_bytes = re.sub(r'<!--.*?-->', '', svg_bytes, flags=re.DOTALL)
+
+    # Empezar exactamente en el tag <svg
+    idx = svg_bytes.find('<svg')
+    if idx > 0:
+        svg_bytes = svg_bytes[idx:]
+
+    return svg_bytes.strip()
+
+
+# ── VISTA 1: Panel de Códigos de Barras ──────────────────────────────────────
+
+@login_required
+def codigos_barras(request):
+    """
+    Panel principal:
+    - Muestra todos los productos con sus códigos de barras (SVG inline).
+    - Permite buscar/filtrar productos.
+    - Botón para abrir el escáner de cámara (JS puro).
+    - Selección múltiple para imprimir hoja de etiquetas.
+    Acceso: Bodeguero, Gerente, Administrador.
+    Template: app/barras/codigos_barras.html
+    """
+    negocio = _get_negocio(request)
+    if not negocio:
+        return HttpResponse("Su usuario no posee un Perfil de Negocio asignado.")
+
+    search = request.GET.get('q', '').strip()
+    sin_codigo = request.GET.get('sin_codigo', '')
+
+    from .models import Producto
+    from django.db.models import Q
+
+    productos_qs = (
+        Producto.objects
+        .filter(activo=True, negocio=negocio)
+        .order_by('nombre')
+    )
+
+    if search:
+        productos_qs = productos_qs.filter(
+            Q(nombre__icontains=search) | Q(codigo_barras__icontains=search)
+        )
+
+    if sin_codigo:
+        productos_qs = productos_qs.filter(
+            Q(codigo_barras='') | Q(codigo_barras__isnull=True)
+        )
+
+    # Pre-generar SVG para cada producto que tenga código de barras
+    productos_data = []
+    for p in productos_qs:
+        svg = None
+        if p.codigo_barras and p.codigo_barras.strip():
+            try:
+                svg = _generar_svg_barcode(p.codigo_barras.strip())
+            except Exception:
+                svg = None
+        productos_data.append({
+            'producto': p,
+            'svg': svg,
+        })
+
+    total = len(productos_data)
+    con_codigo = sum(1 for d in productos_data if d['svg'])
+    sin_codigo_count = total - con_codigo
+
+    return render(request, 'app/barras/codigos_barras.html', {
+        'productos_data':    productos_data,
+        'search':            search,
+        'sin_codigo':        sin_codigo,
+        'total':             total,
+        'con_codigo':        con_codigo,
+        'sin_codigo_count':  sin_codigo_count,
+    })
+
+
+# ── VISTA 2: SVG individual de un producto (respuesta HTTP directa) ───────────
+
+@login_required
+def barcode_svg(request, pk):
+    """
+    Devuelve el SVG del código de barras de un producto como respuesta HTTP.
+    Útil para <img src="{% url 'barcode-svg' producto.pk %}">
+    o para descarga directa.
+    """
+    negocio = _get_negocio(request)
+    if not negocio:
+        return HttpResponse(status=403)
+
+    from .models import Producto
+    producto = get_object_or_404(Producto, pk=pk, negocio=negocio)
+
+    if not producto.codigo_barras:
+        return HttpResponse("Este producto no tiene código de barras asignado.", status=404)
+
+    try:
+        buf = io.BytesIO()
+        options = {
+            'write_text': True,
+            'font_size':  12,
+            'text_distance': 5,
+            'quiet_zone': 6,
+            'module_height': 15,
+        }
+        Code128(producto.codigo_barras, writer=SVGWriter()).write(buf, options=options)
+        svg_content = buf.getvalue()
+
+        descargar = request.GET.get('download', '')
+        if descargar:
+            response = HttpResponse(svg_content, content_type='image/svg+xml')
+            nombre_archivo = re.sub(r'[^\w\-]', '_', producto.nombre)
+            response['Content-Disposition'] = f'attachment; filename="{nombre_archivo}_{producto.codigo_barras}.svg"'
+            return response
+
+        return HttpResponse(svg_content, content_type='image/svg+xml')
+    except Exception as e:
+        return HttpResponse(f"Error generando código: {e}", status=500)
+
+
+# ── VISTA 3: API JSON – buscar producto por código escaneado ──────────────────
+
+@login_required
+def buscar_por_codigo(request):
+    """
+    Endpoint AJAX que recibe un código de barras (GET ?codigo=XXX)
+    y devuelve el JSON del producto si existe en el negocio.
+    Lo usa el escáner de cámara en el frontend.
+    """
+    negocio = _get_negocio(request)
+    if not negocio:
+        return JsonResponse({'found': False, 'error': 'Sin negocio asignado'}, status=403)
+
+    codigo = request.GET.get('codigo', '').strip()
+    if not codigo:
+        return JsonResponse({'found': False, 'error': 'Código vacío'})
+
+    from .models import Producto
+    try:
+        producto = Producto.objects.get(
+            codigo_barras=codigo,
+            negocio=negocio,
+            activo=True,
+        )
+        return JsonResponse({
+            'found': True,
+            'id':           producto.pk,
+            'nombre':       producto.nombre,
+            'codigo':       producto.codigo_barras,
+            'stock_actual': float(producto.stock_actual),
+            'precio_venta': float(producto.precio_venta),
+            'stock_bajo':   producto.stock_bajo,
+        })
+    except Producto.DoesNotExist:
+        return JsonResponse({'found': False, 'error': f'Código "{codigo}" no encontrado'})
+    except Producto.MultipleObjectsReturned:
+        return JsonResponse({'found': False, 'error': 'Código duplicado en el sistema'})
+
+
+# ── VISTA 4: Hoja de impresión de etiquetas (múltiple) ───────────────────────
+
+@login_required
+def hoja_impresion_barras(request, ids):
+    """
+    Genera una página lista para imprimir con los códigos de barras
+    de los productos seleccionados (IDs separados por guión: /hoja/1-3-7/).
+    Template: app/barras/hoja_impresion.html
+    """
+    negocio = _get_negocio(request)
+    if not negocio:
+        return HttpResponse(status=403)
+
+    from .models import Producto
+    try:
+        pk_list = [int(x) for x in ids.split('-') if x.isdigit()]
+    except ValueError:
+        return HttpResponse("IDs inválidos", status=400)
+
+    productos_qs = Producto.objects.filter(
+        pk__in=pk_list,
+        negocio=negocio,
+        activo=True,
+    )
+
+    etiquetas = []
+    for p in productos_qs:
+        if p.codigo_barras and p.codigo_barras.strip():
+            try:
+                svg = _generar_svg_barcode(p.codigo_barras.strip())
+                etiquetas.append({'producto': p, 'svg': svg})
+            except Exception:
+                pass
+
+    copias = int(request.GET.get('copias', 1))
+    etiquetas_final = etiquetas * copias
+
+    return render(request, 'app/barras/hoja_impresion.html', {
+        'etiquetas': etiquetas_final,
+        'copias':    copias,
+    })
