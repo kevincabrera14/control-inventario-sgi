@@ -2,6 +2,7 @@ import os
 import dj_database_url
 from pathlib import Path
 from dotenv import load_dotenv
+
 env_path = Path(__file__).resolve().parents[2] / '.env'
 load_dotenv(dotenv_path=env_path)
 
@@ -95,7 +96,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [BASE_DIR / 'app' / 'static']
+STATICFILES_DIRS = [BASE_DIR / 'app' / 'static', BASE_DIR / 'static']
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
@@ -106,3 +107,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
+
+# ─── PWA Configuration ────────────────────────────────────────────────────────
+PWA_APP_NAME = 'Control de Inventario SGI'
+PWA_APP_DESCRIPTION = 'Sistema de Gestión de Inventario'
+PWA_APP_THEME_COLOR = '#7B1FA2'
+PWA_APP_BACKGROUND_COLOR = '#7B1FA2'
+PWA_APP_DISPLAY = 'standalone'
+PWA_APP_START_URL = '/'

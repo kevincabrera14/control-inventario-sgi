@@ -6,15 +6,22 @@
     <title>SGI | Información del Sistema</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-    /* =============================================
-       SGI — Información del Sistema
-       The End theme — Mobile First
-       ============================================= */
 
+    <!-- ═══════════ PWA META TAGS ═══════════ -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#7B1FA2">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SGI">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192x192.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/static/icons/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="/static/icons/icon-192x192.png">
+    <!-- ════════════════════════════════════ -->
+
+    <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* ── Canvas fondo (mismo que login) ── */
     #endCanvas {
         position: fixed;
         inset: 0;
@@ -34,7 +41,6 @@
         color: #e9d5ff;
     }
 
-    /* ── Layout ── */
     .page-wrapper {
         position: relative;
         z-index: 2;
@@ -122,7 +128,6 @@
     }
     .info-card:hover { border-color: rgba(124, 58, 237, 0.5); }
 
-    /* ── Accordion header ── */
     .card-toggle {
         width: 100%;
         background: none;
@@ -153,33 +158,26 @@
     }
     .info-card.open .toggle-arrow { transform: rotate(180deg); }
 
-    /* ── Accordion body ── */
     .card-body {
         max-height: 0;
         overflow: hidden;
         transition: max-height 0.35s ease;
-        border-top: 0px solid rgba(124, 58, 237, 0.2);
     }
     .info-card.open .card-body {
-        max-height: 600px;
-        border-top-width: 1px;
+        max-height: 1200px;
+        border-top: 1px solid rgba(124, 58, 237, 0.2);
     }
     .card-body-inner { padding: 1rem 1.25rem 1.25rem; }
 
-    /* ── Tabla de áreas ── */
+    /* ── Tablas ── */
     .area-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
     .area-table td { padding: 7px 10px; vertical-align: top; }
     .area-table tr { border-bottom: 1px solid rgba(124, 58, 237, 0.12); }
     .area-table tr:last-child { border-bottom: none; }
-    .area-table td:first-child {
-        color: #a78bfa;
-        font-weight: 600;
-        white-space: nowrap;
-        width: 36%;
-    }
+    .area-table td:first-child { color: #a78bfa; font-weight: 600; white-space: nowrap; width: 36%; }
     .area-table td:last-child { color: #c4b5fd; line-height: 1.5; }
 
-    /* ── Lista de info ── */
+    /* ── Lista ── */
     .info-list { list-style: none; }
     .info-list li {
         padding: 6px 0;
@@ -193,7 +191,7 @@
     .info-list li:last-child { border-bottom: none; }
     .info-list li::before { content: '▸'; color: #7c3aed; flex-shrink: 0; margin-top: 1px; }
 
-    /* ── Usuarios de prueba ── */
+    /* ── Usuarios ── */
     .users-grid {
         display: grid;
         grid-template-columns: 1fr;
@@ -218,15 +216,10 @@
     }
     .user-info { flex: 1; min-width: 0; }
     .user-role { font-size: 0.7rem; color: #7c3aed; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
-    .user-creds {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.8rem;
-        color: #a78bfa;
-        margin-top: 2px;
-    }
+    .user-creds { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #a78bfa; margin-top: 2px; }
     .user-creds span { color: #6d28d9; margin: 0 4px; }
 
-    /* ── Pasos de inicio ── */
+    /* ── Pasos ── */
     .steps { display: flex; flex-direction: column; gap: 0.6rem; }
     .step {
         display: flex;
@@ -257,7 +250,7 @@
         color: #a78bfa;
     }
 
-    /* ── Modelos badge ── */
+    /* ── Badges ── */
     .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
     .badge {
         font-size: 0.75rem;
@@ -270,9 +263,218 @@
         font-family: 'JetBrains Mono', monospace;
     }
 
-    /* ── Texto descriptivo ── */
     .desc-text { font-size: 0.87rem; color: #c4b5fd; line-height: 1.65; }
     .desc-text + .desc-text { margin-top: 0.6rem; }
+
+    /* ════════════════════════════════════════════
+       SECCIÓN PWA — Tabs + botones de instalación
+       ════════════════════════════════════════════ */
+
+    /* Tabs de plataforma */
+    .pwa-tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 1rem;
+        background: rgba(109, 40, 217, 0.08);
+        border-radius: 10px;
+        padding: 4px;
+    }
+    .pwa-tab-btn {
+        flex: 1;
+        background: none;
+        border: none;
+        color: #a78bfa;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.78rem;
+        font-weight: 600;
+        padding: 8px 6px;
+        border-radius: 7px;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+    }
+    .pwa-tab-btn .tab-emoji { font-size: 1.1rem; }
+    .pwa-tab-btn.active {
+        background: rgba(109, 40, 217, 0.4);
+        color: #e9d5ff;
+        box-shadow: 0 0 12px rgba(109, 40, 217, 0.3);
+    }
+    .pwa-tab-btn:hover:not(.active) { background: rgba(109, 40, 217, 0.15); }
+
+    .pwa-tab-content { display: none; }
+    .pwa-tab-content.active { display: block; }
+
+    /* Pasos de instalación dentro de tabs */
+    .install-steps { display: flex; flex-direction: column; gap: 8px; }
+    .install-step {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 10px 12px;
+        background: rgba(109, 40, 217, 0.06);
+        border: 1px solid rgba(124, 58, 237, 0.15);
+        border-radius: 10px;
+    }
+    .install-step-num {
+        width: 22px; height: 22px;
+        border-radius: 5px;
+        background: linear-gradient(135deg, #7c3aed, #4c1d95);
+        color: #f5f3ff;
+        font-size: 0.7rem;
+        font-weight: 700;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+    .install-step-text { font-size: 0.84rem; color: #c4b5fd; line-height: 1.5; }
+    .install-step-text .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(109, 40, 217, 0.25);
+        border: 1px solid rgba(124, 58, 237, 0.3);
+        border-radius: 6px;
+        padding: 2px 8px;
+        font-size: 0.78rem;
+        color: #a78bfa;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    /* ─────────────────────────────────────────
+       BOTONES DE INSTALACIÓN — cada uno en su tab
+       ───────────────────────────────────────── */
+
+    /* Base compartida para todos los botones de instalar */
+    .btn-install-pwa {
+        display: none; /* oculto por defecto; JS lo muestra */
+        width: 100%;
+        margin-top: 1rem;
+        padding: 14px 20px;
+        border: none;
+        border-radius: 12px;
+        color: #f5f3ff;
+        font-family: 'Inter', sans-serif;
+        font-size: 1rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        min-height: 56px;
+    }
+    .btn-install-pwa:hover { transform: translateY(-2px); }
+    .btn-install-pwa:active { transform: scale(0.98); }
+    .btn-install-pwa.visible { display: flex; }
+
+    /* Estado "ya instalada" */
+    .btn-install-pwa.installed {
+        background: linear-gradient(135deg, #14532d, #064e3b) !important;
+        box-shadow: 0 0 20px rgba(20, 83, 45, 0.35) !important;
+        cursor: default;
+        pointer-events: none;
+    }
+
+    /* Android — morado */
+    #btn-install-android {
+        background: linear-gradient(135deg, #7c3aed, #4c1d95);
+        box-shadow: 0 0 24px rgba(124, 58, 237, 0.45), 0 4px 16px rgba(0,0,0,0.4);
+    }
+    #btn-install-android:hover {
+        box-shadow: 0 0 32px rgba(124, 58, 237, 0.65), 0 6px 20px rgba(0,0,0,0.4);
+    }
+
+    /* PC / Mac — azul índigo */
+    #btn-install-pc {
+        background: linear-gradient(135deg, #4338ca, #1e1b4b);
+        box-shadow: 0 0 24px rgba(67, 56, 202, 0.45), 0 4px 16px rgba(0,0,0,0.4);
+    }
+    #btn-install-pc:hover {
+        box-shadow: 0 0 32px rgba(67, 56, 202, 0.65), 0 6px 20px rgba(0,0,0,0.4);
+    }
+
+    /* Nota de estado */
+    .pwa-status-note {
+        margin-top: 10px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 0.78rem;
+        color: #a78bfa;
+        background: rgba(109, 40, 217, 0.1);
+        border: 1px solid rgba(124, 58, 237, 0.2);
+        text-align: center;
+        line-height: 1.5;
+    }
+
+    /* Icono SVG compartir (iPhone) */
+    .share-icon {
+        display: inline-block;
+        width: 14px; height: 14px;
+        vertical-align: middle;
+        margin: 0 2px;
+    }
+
+    /* ── Banner flotante Android ── */
+    #pwa-float-banner {
+        display: none;
+        position: fixed;
+        bottom: 20px;
+        right: 16px;
+        left: 16px;
+        max-width: 360px;
+        margin: 0 auto;
+        background: linear-gradient(135deg, #1a0035, #0a001a);
+        border: 1px solid rgba(124, 58, 237, 0.5);
+        border-radius: 16px;
+        padding: 14px 16px;
+        box-shadow: 0 0 32px rgba(109, 40, 217, 0.4), 0 8px 32px rgba(0,0,0,0.6);
+        z-index: 9999;
+        cursor: pointer;
+        align-items: center;
+        gap: 12px;
+        transition: transform 0.2s;
+        animation: slideUp 0.4s ease;
+    }
+    #pwa-float-banner:hover { transform: translateY(-2px); }
+    #pwa-float-banner.visible { display: flex; }
+    @keyframes slideUp {
+        from { transform: translateY(80px); opacity: 0; }
+        to   { transform: translateY(0); opacity: 1; }
+    }
+    .float-icon { width: 42px; height: 42px; border-radius: 10px; overflow: hidden; flex-shrink: 0; border: 1px solid rgba(167, 139, 250, 0.3); }
+    .float-icon img { width: 100%; height: 100%; object-fit: cover; }
+    .float-text { flex: 1; }
+    .float-text strong { display: block; font-size: 0.88rem; color: #e9d5ff; font-weight: 700; }
+    .float-text span { font-size: 0.75rem; color: #a78bfa; }
+    .float-btn {
+        background: linear-gradient(135deg, #7c3aed, #4c1d95);
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.78rem;
+        font-weight: 700;
+        padding: 7px 14px;
+        cursor: pointer;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    .float-close {
+        position: absolute;
+        top: 8px; right: 10px;
+        background: none;
+        border: none;
+        color: rgba(167, 139, 250, 0.5);
+        font-size: 1rem;
+        cursor: pointer;
+        padding: 2px 4px;
+    }
+    .float-close:hover { color: #a78bfa; }
 
     /* ── Footer ── */
     .page-footer {
@@ -290,12 +492,11 @@
         .users-grid { grid-template-columns: 1fr 1fr; }
         .card-toggle { padding: 1.1rem 1.5rem; }
         .card-body-inner { padding: 1.1rem 1.5rem 1.5rem; }
+        #pwa-float-banner { left: auto; right: 20px; width: 340px; }
     }
-
     @media (min-width: 680px) {
         .users-grid { grid-template-columns: repeat(3, 1fr); }
     }
-
     @media (prefers-reduced-motion: reduce) {
         #endCanvas { display: none; }
         body { background: #0a0010; }
@@ -304,12 +505,10 @@
 </head>
 <body>
 
-    <!-- Canvas animado igual que el login -->
     <canvas id="endCanvas"></canvas>
 
     <div class="page-wrapper">
 
-        <!-- Volver al login -->
         <a href="{% url 'login' %}" class="btn-back">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M19 12H5M12 5l-7 7 7 7"/>
@@ -317,7 +516,6 @@
             Volver al login
         </a>
 
-        <!-- Encabezado -->
         <div class="page-header">
             <div class="header-logo">
                 <img src="{% static 'img/logo.png' %}" alt="SGI Logo">
@@ -372,7 +570,7 @@
             </div>
         </div>
 
-        <!-- ── 3. Modelos del sistema ── -->
+        <!-- ── 3. Modelos ── -->
         <div class="info-card" id="card-models">
             <button class="card-toggle" onclick="toggleCard('card-models')" aria-expanded="false">
                 <div class="toggle-icon" style="background:rgba(30,27,75,.4)">🗄️</div>
@@ -471,7 +669,7 @@
                         </div>
                         <div class="step">
                             <div class="step-num">3</div>
-                            <div class="step-text">Opcional: <code>python manage.py seed</code> para cargar datos de ejemplo (categorías, productos, movimientos).</div>
+                            <div class="step-text">Opcional: <code>python manage.py seed</code> para cargar datos de ejemplo.</div>
                         </div>
                         <div class="step">
                             <div class="step-num">4</div>
@@ -486,15 +684,190 @@
             </div>
         </div>
 
+        <!-- ══════════════════════════════════════════════════════
+             7. INSTALAR LA APP — Botones por plataforma
+             ══════════════════════════════════════════════════════ -->
+        <div class="info-card" id="card-install">
+            <button class="card-toggle" onclick="toggleCard('card-install')" aria-expanded="false">
+                <div class="toggle-icon" style="background:rgba(109,40,217,.25)">📲</div>
+                <span class="toggle-title">Instalar la app en tu dispositivo</span>
+                <svg class="toggle-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="card-body">
+                <div class="card-body-inner">
+
+                    <!-- Tabs de plataforma -->
+                    <div class="pwa-tabs">
+                        <button class="pwa-tab-btn active" onclick="switchTab('android')" id="tab-btn-android">
+                            <span class="tab-emoji">🤖</span>Android
+                        </button>
+                        <button class="pwa-tab-btn" onclick="switchTab('iphone')" id="tab-btn-iphone">
+                            <span class="tab-emoji">🍎</span>iPhone
+                        </button>
+                        <button class="pwa-tab-btn" onclick="switchTab('pc')" id="tab-btn-pc">
+                            <span class="tab-emoji">💻</span>PC / Mac
+                        </button>
+                    </div>
+
+                    <!-- ══ TAB ANDROID ══ -->
+                    <div class="pwa-tab-content active" id="tab-android">
+                        <div class="install-steps">
+                            <div class="install-step">
+                                <div class="install-step-num">1</div>
+                                <div class="install-step-text">
+                                    Abre SGI en <strong>Google Chrome</strong> (en tu teléfono Android).
+                                </div>
+                            </div>
+                            <div class="install-step">
+                                <div class="install-step-num">2</div>
+                                <div class="install-step-text">
+                                    Toca el botón <span class="pill">📲 Instalar SGI en Android</span> que aparece más abajo.
+                                </div>
+                            </div>
+                            <div class="install-step">
+                                <div class="install-step-num">3</div>
+                                <div class="install-step-text">
+                                    Chrome mostrará una ventana emergente. Toca <strong>Instalar</strong> para confirmar.
+                                </div>
+                            </div>
+                            <div class="install-step">
+                                <div class="install-step-num">4</div>
+                                <div class="install-step-text">
+                                    ¡Listo! SGI aparecerá junto a tus demás aplicaciones instaladas.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BOTÓN DE INSTALACIÓN ANDROID -->
+                        <button type="button" class="btn-install-pwa" id="btn-install-android" aria-label="Instalar SGI en Android">
+                            <span>📲</span> Instalar SGI en Android
+                        </button>
+
+                        <div class="pwa-status-note" id="android-status-note">
+                            Si el botón no aparece, abre el menú <strong>⋮</strong> de Chrome y selecciona
+                            <strong>Instalar aplicación</strong> o <strong>Añadir a pantalla de inicio</strong>.
+                        </div>
+                    </div>
+                    <!-- ══ FIN TAB ANDROID ══ -->
+
+                    <!-- ══ TAB IPHONE ══ -->
+                    <div class="pwa-tab-content" id="tab-iphone">
+                        <div class="install-steps">
+                            <div class="install-step">
+                                <div class="install-step-num">1</div>
+                                <div class="install-step-text">
+                                    Abre SGI en <strong>Safari</strong>. En iPhone es obligatorio usar Safari; Chrome y Firefox no permiten instalar PWA.
+                                </div>
+                            </div>
+                            <div class="install-step">
+                                <div class="install-step-num">2</div>
+                                <div class="install-step-text">
+                                    Toca el botón
+                                    <span class="pill">
+                                        <svg class="share-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
+                                        Compartir
+                                    </span>
+                                    en la barra inferior de Safari.
+                                </div>
+                            </div>
+                            <div class="install-step">
+                                <div class="install-step-num">3</div>
+                                <div class="install-step-text">
+                                    Desplázate en el menú y selecciona <span class="pill">➕ Agregar a pantalla de inicio</span>.
+                                </div>
+                            </div>
+                            <div class="install-step">
+                                <div class="install-step-num">4</div>
+                                <div class="install-step-text">
+                                    Toca <strong>Agregar</strong> (arriba a la derecha). El ícono de SGI quedará en tu pantalla de inicio.
+                                </div>
+                            </div>
+                            <div class="install-step">
+                                <div class="install-step-num">5</div>
+                                <div class="install-step-text">
+                                    Abre la app desde el ícono: se cargará en pantalla completa, sin la barra de Safari.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Nota informativa iPhone (no hay API de instalación en iOS Safari) -->
+                        <div class="pwa-status-note" style="margin-top:12px">
+                            ⚠️ En iPhone la instalación es manual desde Safari. Sigue los pasos de arriba.
+                            <br>Solo funciona en <strong>Safari</strong>; otros navegadores no tienen esta opción en iOS.
+                        </div>
+                    </div>
+                    <!-- ══ FIN TAB IPHONE ══ -->
+
+                    <!-- ══ TAB PC / MAC ══ -->
+                    <div class="pwa-tab-content" id="tab-pc">
+                        <div class="install-steps">
+                            <div class="install-step">
+                                <div class="install-step-num">1</div>
+                                <div class="install-step-text">
+                                    Abre SGI en <strong>Chrome</strong> o <strong>Edge</strong> en tu computador.
+                                </div>
+                            </div>
+                            <div class="install-step">
+                                <div class="install-step-num">2</div>
+                                <div class="install-step-text">
+                                    Toca el botón <span class="pill">💻 Instalar SGI en PC / Mac</span> que aparece más abajo.
+                                </div>
+                            </div>
+                            <div class="install-step">
+                                <div class="install-step-num">3</div>
+                                <div class="install-step-text">
+                                    Confirma con <strong>Instalar</strong> en la ventana emergente. SGI se abrirá como ventana independiente.
+                                </div>
+                            </div>
+                            <div class="install-step">
+                                <div class="install-step-num">4</div>
+                                <div class="install-step-text">
+                                    Si el botón no aparece, busca el ícono <span class="pill">⊕</span> en la barra de direcciones del navegador (lado derecho).
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BOTÓN DE INSTALACIÓN PC -->
+                        <button type="button" class="btn-install-pwa" id="btn-install-pc" aria-label="Instalar SGI en PC o Mac">
+                            <span>💻</span> Instalar SGI en PC / Mac
+                        </button>
+
+                        <div class="pwa-status-note" id="pc-status-note">
+                            Si el botón no aparece, ve al menú <strong>⋮</strong> de Chrome →
+                            <strong>Guardar e importar → Instalar como aplicación</strong>.
+                            En Edge: <em>Aplicaciones → Instalar este sitio como aplicación</em>.
+                        </div>
+                    </div>
+                    <!-- ══ FIN TAB PC ══ -->
+
+                </div>
+            </div>
+        </div>
+        <!-- ══ FIN CARD INSTALAR ══ -->
+
         <p class="page-footer">SGI &copy; 2025 &mdash; Control de Inventario</p>
     </div>
 
-    <!-- ===== JS: Animación "The End" (idéntica al login) ===== -->
+    <!-- ══ Banner flotante Android ══ -->
+    <div id="pwa-float-banner" role="banner" aria-label="Instalar aplicación">
+        <button class="float-close" id="btn-float-close" aria-label="Cerrar">✕</button>
+        <div class="float-icon">
+            <img src="/static/icons/icon-192x192.png" alt="SGI" onerror="this.src='{% static 'img/logo.png' %}'">
+        </div>
+        <div class="float-text">
+            <strong>Instalar SGI</strong>
+            <span>Añadir a pantalla de inicio</span>
+        </div>
+        <button class="float-btn" id="btn-float-install">Instalar</button>
+    </div>
+
+    <!-- ════════════════════════════════
+         JS: Canvas animado
+         ════════════════════════════════ -->
     <script>
     (function () {
         const canvas = document.getElementById('endCanvas');
         const ctx = canvas.getContext('2d');
-
         const PALETTE = {
             bg: '#0a0010',
             stars: ['#ffffff', '#d8b4fe', '#a78bfa', '#7c3aed', '#c4b5fd'],
@@ -506,167 +879,222 @@
             ],
             particles: ['#a78bfa', '#c084fc', '#818cf8', '#34d399', '#6ee7b7'],
         };
-
         let W, H, stars = [], blocks = [], particles = [], nebulaClouds = [], tick = 0;
-
-        function resize() {
-            W = canvas.width  = window.innerWidth;
-            H = canvas.height = window.innerHeight;
-            initScene();
-        }
-
+        function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; initScene(); }
         function initScene() {
             stars = [];
             const starCount = Math.floor((W * H) / 3000);
             for (let i = 0; i < starCount; i++) {
-                stars.push({
-                    x: Math.random() * W, y: Math.random() * H,
-                    r: Math.random() * 1.5 + 0.3,
-                    color: PALETTE.stars[Math.floor(Math.random() * PALETTE.stars.length)],
-                    twinkleSpeed: Math.random() * 0.04 + 0.01,
-                    twinkleOffset: Math.random() * Math.PI * 2,
-                    alpha: Math.random() * 0.6 + 0.4,
-                });
+                stars.push({ x: Math.random()*W, y: Math.random()*H, r: Math.random()*1.5+0.3, color: PALETTE.stars[Math.floor(Math.random()*PALETTE.stars.length)], twinkleSpeed: Math.random()*0.04+0.01, twinkleOffset: Math.random()*Math.PI*2, alpha: Math.random()*0.6+0.4 });
             }
             blocks = [];
             const blockCount = Math.max(8, Math.floor((W * H) / 18000));
             for (let i = 0; i < blockCount; i++) spawnBlock(true);
-
             nebulaClouds = [];
-            for (let i = 0; i < 5; i++) {
-                nebulaClouds.push({
-                    x: Math.random() * W, y: Math.random() * H,
-                    rx: Math.random() * 200 + 100, ry: Math.random() * 100 + 60,
-                    alpha: Math.random() * 0.08 + 0.03,
-                    color: ['#4c1d95','#1e1b4b','#064e3b','#3b0764'][Math.floor(Math.random()*4)],
-                    speed: (Math.random() - 0.5) * 0.08,
-                });
-            }
+            for (let i = 0; i < 5; i++) { nebulaClouds.push({ x: Math.random()*W, y: Math.random()*H, rx: Math.random()*200+100, ry: Math.random()*100+60, alpha: Math.random()*0.08+0.03, color: ['#4c1d95','#1e1b4b','#064e3b','#3b0764'][Math.floor(Math.random()*4)], speed: (Math.random()-0.5)*0.08 }); }
             particles = [];
             const pCount = Math.floor((W * H) / 6000);
             for (let i = 0; i < pCount; i++) spawnParticle(true);
         }
-
         function spawnBlock(scatter) {
-            const sz = Math.floor(Math.random() * 4 + 2) * 8;
-            const def = PALETTE.blocks[Math.floor(Math.random() * PALETTE.blocks.length)];
-            blocks.push({
-                x: scatter ? Math.random() * W : (Math.random() > 0.5 ? W + sz : -sz),
-                y: scatter ? Math.random() * H : Math.random() * H,
-                sz, def,
-                vx: (Math.random() - 0.5) * 0.4,
-                vy: (Math.random() - 0.5) * 0.3,
-                rotation: Math.random() * Math.PI * 2,
-                rotSpeed: (Math.random() - 0.5) * 0.005,
-                alpha: Math.random() * 0.5 + 0.2,
-            });
+            const sz = Math.floor(Math.random()*4+2)*8;
+            const def = PALETTE.blocks[Math.floor(Math.random()*PALETTE.blocks.length)];
+            blocks.push({ x: scatter ? Math.random()*W : (Math.random()>.5 ? W+sz : -sz), y: scatter ? Math.random()*H : Math.random()*H, sz, def, vx: (Math.random()-0.5)*0.4, vy: (Math.random()-0.5)*0.3, rotation: Math.random()*Math.PI*2, rotSpeed: (Math.random()-0.5)*0.005, alpha: Math.random()*0.5+0.2 });
         }
-
         function spawnParticle(scatter) {
-            particles.push({
-                x: scatter ? Math.random() * W : Math.random() * W,
-                y: scatter ? Math.random() * H : H + 4,
-                vx: (Math.random() - 0.5) * 0.6,
-                vy: -(Math.random() * 0.5 + 0.2),
-                r: Math.random() * 2.5 + 0.5,
-                color: PALETTE.particles[Math.floor(Math.random() * PALETTE.particles.length)],
-                alpha: Math.random() * 0.8 + 0.2,
-                life: 1, decay: Math.random() * 0.003 + 0.001,
-            });
+            particles.push({ x: Math.random()*W, y: scatter ? Math.random()*H : H+4, vx: (Math.random()-0.5)*0.6, vy: -(Math.random()*0.5+0.2), r: Math.random()*2.5+0.5, color: PALETTE.particles[Math.floor(Math.random()*PALETTE.particles.length)], alpha: Math.random()*0.8+0.2, life: 1, decay: Math.random()*0.003+0.001 });
         }
-
-        function drawBlock(b) {
-            ctx.save();
-            ctx.translate(b.x, b.y);
-            ctx.rotate(b.rotation);
-            ctx.globalAlpha = b.alpha;
-            const s = b.sz;
-            ctx.fillStyle = b.def.fill;
-            ctx.fillRect(-s/2, -s/2, s, s);
-            ctx.fillStyle = lighten(b.def.fill, 0.25);
-            ctx.beginPath();
-            ctx.moveTo(-s/2,-s/2); ctx.lineTo(s/2,-s/2);
-            ctx.lineTo(s/2+s*.25,-s/2-s*.25); ctx.lineTo(-s/2+s*.25,-s/2-s*.25);
-            ctx.closePath(); ctx.fill();
-            ctx.fillStyle = darken(b.def.fill, 0.25);
-            ctx.beginPath();
-            ctx.moveTo(s/2,-s/2); ctx.lineTo(s/2,s/2);
-            ctx.lineTo(s/2+s*.25,s/2-s*.25); ctx.lineTo(s/2+s*.25,-s/2-s*.25);
-            ctx.closePath(); ctx.fill();
-            ctx.strokeStyle = b.def.stroke; ctx.lineWidth = 1;
-            ctx.strokeRect(-s/2,-s/2,s,s);
-            ctx.strokeStyle = darken(b.def.stroke, 0.3); ctx.lineWidth = 0.5;
-            ctx.beginPath();
-            ctx.moveTo(-s/4,-s/2); ctx.lineTo(-s/4,s/2);
-            ctx.moveTo(s/4,-s/2);  ctx.lineTo(s/4,s/2);
-            ctx.moveTo(-s/2,-s/4); ctx.lineTo(s/2,-s/4);
-            ctx.moveTo(-s/2,s/4);  ctx.lineTo(s/2,s/4);
-            ctx.stroke();
-            ctx.restore();
-        }
-
         function hexToRgb(hex) { return [parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)]; }
         function rgbToHex(r,g,b) { return '#'+[r,g,b].map(v=>Math.min(255,Math.max(0,Math.round(v))).toString(16).padStart(2,'0')).join(''); }
         function lighten(hex, amt) { const [r,g,b]=hexToRgb(hex); return rgbToHex(r+(255-r)*amt,g+(255-g)*amt,b+(255-b)*amt); }
-        function darken(hex, amt)  { const [r,g,b]=hexToRgb(hex); return rgbToHex(r*(1-amt),g*(1-amt),b*(1-amt)); }
-
+        function darken(hex, amt) { const [r,g,b]=hexToRgb(hex); return rgbToHex(r*(1-amt),g*(1-amt),b*(1-amt)); }
+        function drawBlock(b) {
+            ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.rotation); ctx.globalAlpha = b.alpha;
+            const s = b.sz;
+            ctx.fillStyle = b.def.fill; ctx.fillRect(-s/2,-s/2,s,s);
+            ctx.fillStyle = lighten(b.def.fill,.25);
+            ctx.beginPath(); ctx.moveTo(-s/2,-s/2); ctx.lineTo(s/2,-s/2); ctx.lineTo(s/2+s*.25,-s/2-s*.25); ctx.lineTo(-s/2+s*.25,-s/2-s*.25); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = darken(b.def.fill,.25);
+            ctx.beginPath(); ctx.moveTo(s/2,-s/2); ctx.lineTo(s/2,s/2); ctx.lineTo(s/2+s*.25,s/2-s*.25); ctx.lineTo(s/2+s*.25,-s/2-s*.25); ctx.closePath(); ctx.fill();
+            ctx.strokeStyle = b.def.stroke; ctx.lineWidth = 1; ctx.strokeRect(-s/2,-s/2,s,s);
+            ctx.strokeStyle = darken(b.def.stroke,.3); ctx.lineWidth = 0.5;
+            ctx.beginPath(); ctx.moveTo(-s/4,-s/2); ctx.lineTo(-s/4,s/2); ctx.moveTo(s/4,-s/2); ctx.lineTo(s/4,s/2); ctx.moveTo(-s/2,-s/4); ctx.lineTo(s/2,-s/4); ctx.moveTo(-s/2,s/4); ctx.lineTo(s/2,s/4); ctx.stroke();
+            ctx.restore();
+        }
         function draw() {
             tick++;
-            ctx.fillStyle = PALETTE.bg;
-            ctx.fillRect(0, 0, W, H);
-
+            ctx.fillStyle = PALETTE.bg; ctx.fillRect(0,0,W,H);
             nebulaClouds.forEach(nc => {
                 nc.x += nc.speed;
-                if (nc.x > W + nc.rx) nc.x = -nc.rx;
-                if (nc.x < -nc.rx)   nc.x = W + nc.rx;
-                const grd = ctx.createRadialGradient(nc.x, nc.y, 0, nc.x, nc.y, Math.max(nc.rx, nc.ry));
-                grd.addColorStop(0, nc.color); grd.addColorStop(1, 'transparent');
-                ctx.globalAlpha = nc.alpha;
-                ctx.beginPath(); ctx.ellipse(nc.x, nc.y, nc.rx, nc.ry, 0, 0, Math.PI*2);
+                if (nc.x > W+nc.rx) nc.x = -nc.rx;
+                if (nc.x < -nc.rx) nc.x = W+nc.rx;
+                const grd = ctx.createRadialGradient(nc.x,nc.y,0,nc.x,nc.y,Math.max(nc.rx,nc.ry));
+                grd.addColorStop(0,nc.color); grd.addColorStop(1,'transparent');
+                ctx.globalAlpha = nc.alpha; ctx.beginPath(); ctx.ellipse(nc.x,nc.y,nc.rx,nc.ry,0,0,Math.PI*2);
                 ctx.fillStyle = grd; ctx.fill(); ctx.globalAlpha = 1;
             });
-
             stars.forEach(s => {
-                const twinkle = Math.sin(tick * s.twinkleSpeed + s.twinkleOffset) * 0.4 + 0.6;
-                ctx.globalAlpha = s.alpha * twinkle;
-                ctx.fillStyle = s.color;
-                ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
+                const twinkle = Math.sin(tick*s.twinkleSpeed+s.twinkleOffset)*0.4+0.6;
+                ctx.globalAlpha = s.alpha*twinkle; ctx.fillStyle = s.color;
+                ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fill();
             });
             ctx.globalAlpha = 1;
-
-            blocks.forEach((b, i) => {
-                b.x += b.vx; b.y += b.vy; b.rotation += b.rotSpeed;
-                if (b.x < -b.sz*2 || b.x > W+b.sz*2 || b.y < -b.sz*2 || b.y > H+b.sz*2) {
-                    blocks.splice(i, 1); spawnBlock(false);
-                }
+            blocks.forEach((b,i) => {
+                b.x+=b.vx; b.y+=b.vy; b.rotation+=b.rotSpeed;
+                if (b.x<-b.sz*2||b.x>W+b.sz*2||b.y<-b.sz*2||b.y>H+b.sz*2) { blocks.splice(i,1); spawnBlock(false); }
                 drawBlock(b);
             });
-
-            particles.forEach((p, i) => {
-                p.x += p.vx; p.y += p.vy; p.life -= p.decay; p.alpha = p.life;
-                if (p.life <= 0) { particles.splice(i, 1); spawnParticle(false); return; }
-                ctx.globalAlpha = p.alpha * 0.85;
-                ctx.fillStyle = p.color;
+            particles.forEach((p,i) => {
+                p.x+=p.vx; p.y+=p.vy; p.life-=p.decay; p.alpha=p.life;
+                if (p.life<=0) { particles.splice(i,1); spawnParticle(false); return; }
+                ctx.globalAlpha = p.alpha*0.85; ctx.fillStyle = p.color;
                 ctx.shadowBlur = 6; ctx.shadowColor = p.color;
-                ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
-                ctx.shadowBlur = 0;
+                ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill(); ctx.shadowBlur = 0;
             });
-
             ctx.globalAlpha = 1;
             requestAnimationFrame(draw);
         }
-
         window.addEventListener('resize', resize);
-        resize();
-        draw();
+        resize(); draw();
     })();
 
-    // ── Accordion ──────────────────────────────────────────────────────────
+    /* ══════════════════════════════════════════════════
+       Accordion
+       ══════════════════════════════════════════════════ */
     function toggleCard(id) {
         const card = document.getElementById(id);
         const isOpen = card.classList.contains('open');
         card.classList.toggle('open', !isOpen);
         card.querySelector('.card-toggle').setAttribute('aria-expanded', String(!isOpen));
+    }
+
+    /* ══════════════════════════════════════════════════
+       Tabs de plataforma
+       ══════════════════════════════════════════════════ */
+    function switchTab(tab) {
+        ['android', 'iphone', 'pc'].forEach(t => {
+            document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+            document.getElementById('tab-btn-' + t).classList.toggle('active', t === tab);
+        });
+    }
+
+    /* ══════════════════════════════════════════════════
+       PWA — Instalación inteligente
+       ══════════════════════════════════════════════════
+       Estrategia:
+       - Los botones se muestran SIEMPRE (no esperamos el evento)
+       - Si beforeinstallprompt llega → usamos el prompt nativo (1 clic)
+       - Si no llega (manifest/SW no listos) → abrimos la guía del menú
+       - Si ya está instalada → mostramos estado "instalada"
+       ══════════════════════════════════════════════════ */
+    let deferredPrompt = null;
+
+    const btnAndroid    = document.getElementById('btn-install-android');
+    const btnPc         = document.getElementById('btn-install-pc');
+    const floatBanner   = document.getElementById('pwa-float-banner');
+    const btnFloatInst  = document.getElementById('btn-float-install');
+    const btnFloatClose = document.getElementById('btn-float-close');
+    const noteAndroid   = document.getElementById('android-status-note');
+    const notePc        = document.getElementById('pc-status-note');
+
+    /* ── Detectar si ya está instalada (modo standalone) ── */
+    const yaInstalada = window.matchMedia('(display-mode: standalone)').matches
+                     || window.navigator.standalone === true;
+
+    /* ── Mostrar botones desde el inicio ── */
+    function initBotones() {
+        if (yaInstalada) {
+            /* Ya está instalada: mostrar estado verde */
+            markInstalled();
+            return;
+        }
+        /* Mostrar ambos botones en modo "manual" por defecto */
+        btnAndroid.classList.add('visible');
+        btnPc.classList.add('visible');
+        /* Las notas de fallback visibles por defecto (se ocultan si llega el prompt) */
+        if (noteAndroid) noteAndroid.style.display = '';
+        if (notePc)      notePc.style.display      = '';
+    }
+    initBotones();
+
+    /* ── Chrome/Edge disparan beforeinstallprompt cuando el PWA es instalable ── */
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+
+        /* Prompt nativo disponible: ocultar notas de fallback */
+        if (noteAndroid) noteAndroid.style.display = 'none';
+        if (notePc)      notePc.style.display      = 'none';
+
+        /* Actualizar texto de los botones para reflejar que es 1 clic */
+        btnAndroid.innerHTML = '<span>📲</span> Instalar SGI en Android';
+        btnPc.innerHTML      = '<span>💻</span> Instalar SGI en PC / Mac';
+
+        /* Mostrar banner flotante */
+        floatBanner.classList.add('visible');
+    });
+
+    /* ── Función central de instalación ── */
+    async function triggerInstall() {
+        if (deferredPrompt) {
+            /* Modo automático: usa el prompt nativo del navegador */
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            if (outcome === 'accepted') markInstalled();
+        } else {
+            /* Modo manual: abrir el acordeón de instalación y mostrar nota */
+            const card = document.getElementById('card-install');
+            if (!card.classList.contains('open')) {
+                card.classList.add('open');
+                card.querySelector('.card-toggle').setAttribute('aria-expanded', 'true');
+            }
+            /* Scroll suave hacia la card */
+            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            /* Parpadeo para llamar la atención sobre la nota de fallback */
+            const nota = document.activeElement.closest('#tab-android') ? noteAndroid : notePc;
+            if (nota) {
+                nota.style.transition = 'background 0.3s';
+                nota.style.background = 'rgba(124,58,237,0.35)';
+                setTimeout(() => { nota.style.background = ''; }, 1000);
+            }
+        }
+    }
+
+    function markInstalled() {
+        [btnAndroid, btnPc].forEach(btn => {
+            btn.classList.add('visible', 'installed');
+            btn.innerHTML = '✅ SGI ya está instalada';
+            btn.disabled  = true;
+        });
+        floatBanner.classList.remove('visible');
+    }
+
+    /* ── Eventos de los botones ── */
+    btnAndroid.addEventListener('click', triggerInstall);
+    btnPc.addEventListener('click', triggerInstall);
+    btnFloatInst.addEventListener('click', triggerInstall);
+
+    btnFloatClose.addEventListener('click', (e) => {
+        e.stopPropagation();
+        floatBanner.classList.remove('visible');
+    });
+
+    /* App instalada correctamente (evento nativo del navegador) */
+    window.addEventListener('appinstalled', () => {
+        deferredPrompt = null;
+        markInstalled();
+    });
+
+    /* ══════════════════════════════════════════════════
+       Service Worker
+       ══════════════════════════════════════════════════ */
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('SGI SW registrado:', reg.scope))
+                .catch(err => console.warn('SGI SW error:', err));
+        });
     }
     </script>
 

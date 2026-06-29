@@ -129,3 +129,16 @@ html, body { height: 100%; background: var(--color-bg); color: var(--color-text)
     .cart-panel.expanded { width: 450px; }
     .cart-panel.minimized { width: 80px; overflow: hidden; }
 }
+
+/* PWA Float Banner (global) */
+#pwa-float-banner { display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); max-width: 360px; margin: 0 auto; background: linear-gradient(135deg, #1a0035, #0a001a); border: 1px solid rgba(124,58,237,0.5); border-radius: 16px; padding: 14px 16px; box-shadow: 0 0 32px rgba(109,40,217,0.4), 0 8px 32px rgba(0,0,0,0.6); z-index: 9999; cursor: pointer; align-items: center; gap: 12px; transition: transform 0.2s; }
+#pwa-float-banner.visible { display: flex; }
+#pwa-float-banner:hover { transform: translateY(-2px); }
+.float-icon { width: 42px; height: 42px; border-radius: 10px; overflow: hidden; flex-shrink: 0; border: 1px solid rgba(167,139,250,0.3); }
+.float-icon img { width: 100%; height: 100%; object-fit: cover; }
+.float-text { flex: 1; }
+.float-text strong { display: block; font-size: 0.88rem; color: #e9d5ff; font-weight: 700; }
+.float-text span { font-size: 0.75rem; color: #a78bfa; }
+.float-btn { background: linear-gradient(135deg, #7c3aed, #4c1d95); border: none; border-radius: 8px; color: #fff; font-family: 'Inter', sans-serif; font-size: 0.78rem; font-weight: 700; padding: 7px 14px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+.float-close { position: absolute; top: 8px; right: 10px; background: none; border: none; color: rgba(167,139,250,0.5); font-size: 1rem; cursor: pointer; padding: 2px 4px; }
+.float-close:hover { color: #a78bfa; }

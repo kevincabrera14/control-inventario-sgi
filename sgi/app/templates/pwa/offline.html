@@ -1,0 +1,27 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sin conexión - SGI</title>
+    <meta name="theme-color" content="#7B1FA2">
+    <style>
+        html, body { height: 100%; margin: 0; font-family: 'Inter', sans-serif; background: #7B1FA2; display: flex; align-items: center; justify-content: center; color: #f5f3ff; }
+        .container { text-align: center; }
+        .logo { width: 120px; height: 120px; margin: 0 auto 1.5rem; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        p { font-size: 1rem; margin-bottom: 2rem; }
+        button { background: #4c1d95; border: none; color: #fff; padding: 0.75rem 1.5rem; font-size: 1rem; border-radius: 8px; cursor: pointer; }
+        button:hover { background: #5c2db5; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="{% static 'icons/icon-192x192.png' %}" alt="SGI" class="logo" onerror="this.src='{% static 'img/logo.png' %}'">
+        <h1>Sin conexión a Internet</h1>
+        <p>Verifica tu conexión e intenta de nuevo.</p>
+        <button onclick="location.reload();">Reintentar</button>
+    </div>
+</body>
+</html>
