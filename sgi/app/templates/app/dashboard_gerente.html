@@ -10,77 +10,13 @@
     {# ── ENCABEZADO ─────────────────────────────────────────────────── #}
     <div class="d-flex justify-content-between align-items-start mb-4 gap-2">
         <div>
-            <h2 class="mb-0 fw-bold" style="color:var(--color-text)">Resumen Gerencial</h2>
+            <h2 class="mb-0 fw-bold" style="color:var(--color-text)">{{ user.username }}</h2>
             <p class="small mb-0" style="color:var(--color-muted)">
                 Panel de supervisión · {{ request.user.perfil.negocio.nombre }}
             </p>
         </div>
 
-        {# ── MENÚ DE ACCIONES ──────────────────────────────────────── #}
-        <div class="dropdown flex-shrink-0">
-            <button class="btn btn-primary dropdown-toggle shadow-sm px-3" type="button"
-                    id="menuGerente" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fas fa-sliders-h me-1"></i>
-                <span class="d-none d-sm-inline">Acciones</span>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow-lg" style="min-width:260px;"
-                aria-labelledby="menuGerente">
 
-                <li><h6 class="dropdown-header text-uppercase small">📊 Análisis</h6></li>
-                <li>
-                    <a class="dropdown-item py-2" href="{% url 'gerente-historial-financiero' %}">
-                        <i class="fas fa-chart-bar text-info me-2"></i>
-                        Historial Financiero
-                        <small class="d-block text-muted" style="font-size:11px">Ventas, compras y flujo de caja</small>
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item py-2" href="{% url 'gerente-utilidades' %}">
-                        <i class="fas fa-chart-line text-success me-2"></i>
-                        Utilidades y Proyecciones
-                        <small class="d-block text-muted" style="font-size:11px">Margen bruto y simulaciones</small>
-                    </a>
-                </li>
-
-                <li><hr class="dropdown-divider"></li>
-                <li><h6 class="dropdown-header text-uppercase small">📦 Inventario</h6></li>
-                <li>
-                    <a class="dropdown-item py-2" href="{% url 'gerente-stock-productos' %}">
-                        <i class="fas fa-boxes text-warning me-2"></i>
-                        Stock y Productos
-                        <small class="d-block text-muted" style="font-size:11px">Ver, crear y editar productos</small>
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item py-2" href="{% url 'historial-movimientos' %}">
-                        <i class="fas fa-history me-2" style="color:var(--color-muted)"></i>
-                        Historial General
-                        <small class="d-block text-muted" style="font-size:11px">Todos los movimientos de inventario</small>
-                    </a>
-                </li>
-
-                <li><hr class="dropdown-divider"></li>
-                <li><h6 class="dropdown-header text-uppercase small">⬇️ Exportar</h6></li>
-                <li>
-                    <a class="dropdown-item" href="{% url 'reporte-inventario-excel' %}">
-                        <i class="fas fa-file-excel text-success me-2"></i> Inventario (Excel)
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item" href="{% url 'reporte-inventario-pdf' %}" target="_blank">
-                        <i class="fas fa-file-pdf text-danger me-2"></i> Inventario (PDF)
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item" href="{% url 'reporte-stock-bajo-pdf' %}" target="_blank">
-                        <i class="fas fa-exclamation-triangle text-warning me-2"></i> Stock Bajo (PDF)
-                    </a>
-                </li>
-                <li>
-  <a class="dropdown-item dropdown-item-rich" href="{% url 'codigos-barras' %}">
-    <i class="fas fa-barcode drop-icon drop-icon--purple"></i>
-    <span>Códigos de Barras<small>Generar, escanear e imprimir</small></span>
-  </a>
 </li>
             </ul>
         </div>
@@ -161,11 +97,12 @@
     </div>
 
     {# ── ACCESOS RÁPIDOS ────────────────────────────────────────────── #}
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-4 justify-content-center">
         <div class="col-12">
             <h6 class="text-uppercase mb-0" style="font-size:10px;letter-spacing:.08em;color:var(--color-muted)">Accesos Rápidos</h6>
         </div>
-        <div class="col-6 col-md-3">
+        
+        <div class="col-6 col-md-4 col-xl">
             <a href="{% url 'gerente-historial-financiero' %}" class="text-decoration-none">
                 <div class="glass-card p-3 text-center border-0 shadow-sm h-100"
                      style="border-top:3px solid #0ea5e9 !important;border-radius:10px;transition:.2s"
@@ -175,7 +112,8 @@
                 </div>
             </a>
         </div>
-        <div class="col-6 col-md-3">
+        
+        <div class="col-6 col-md-4 col-xl">
             <a href="{% url 'gerente-stock-productos' %}" class="text-decoration-none">
                 <div class="glass-card p-3 text-center border-0 shadow-sm h-100"
                      style="border-top:3px solid #d97706 !important;border-radius:10px;transition:.2s"
@@ -185,7 +123,8 @@
                 </div>
             </a>
         </div>
-        <div class="col-6 col-md-3">
+        
+        <div class="col-6 col-md-4 col-xl">
             <a href="{% url 'gerente-utilidades' %}" class="text-decoration-none">
                 <div class="glass-card p-3 text-center border-0 shadow-sm h-100"
                      style="border-top:3px solid #7c3aed !important;border-radius:10px;transition:.2s"
@@ -195,16 +134,29 @@
                 </div>
             </a>
         </div>
-        <div class="col-6 col-md-3">
-            <a href="{% url 'historial-movimientos' %}" class="text-decoration-none">
+        
+        <div class="col-6 col-md-4 col-xl">
+            <a href="{% url 'bodeguero-reportes-ventas' %}" class="text-decoration-none">
                 <div class="glass-card p-3 text-center border-0 shadow-sm h-100"
-                     style="border-top:3px solid #6b7280 !important;border-radius:10px;transition:.2s"
+                     style="border-top:3px solid #16a34a !important;border-radius:10px;transition:.2s"
                      onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
-                    <i class="fas fa-history fa-2x mb-2" style="color:#6b7280"></i>
-                    <p class="mb-0 small fw-semibold" style="color:var(--color-text)">Historial<br>General</p>
+                    <i class="fas fa-file-alt fa-2x mb-2" style="color:#16a34a"></i>
+                    <p class="mb-0 small fw-semibold" style="color:var(--color-text)">Reporte<br>Diario</p>
                 </div>
             </a>
         </div>
+        
+        <div class="col-6 col-md-4 col-xl">
+            <a href="{% url 'codigos-barras' %}" class="text-decoration-none">
+                <div class="glass-card p-3 text-center border-0 shadow-sm h-100"
+                     style="border-top:3px solid #a855f7 !important;border-radius:10px;transition:.2s"
+                     onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                    <i class="fas fa-barcode fa-2x mb-2" style="color:#a855f7"></i>
+                    <p class="mb-0 small fw-semibold" style="color:var(--color-text)">Códigos de<br>Barras</p>
+                </div>
+            </a>
+        </div>
+        
     </div>
 
     {# ── ÚLTIMOS MOVIMIENTOS ────────────────────────────────────────── #}
