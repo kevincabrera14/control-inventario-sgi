@@ -63,4 +63,6 @@ urlpatterns = [
     path('codigos-barras/svg/<int:pk>/',   views.barcode_svg,           name='barcode-svg'),
     path('codigos-barras/buscar/',         views.buscar_por_codigo,     name='buscar-por-codigo'),
     path('codigos-barras/hoja/<str:ids>/', views.hoja_impresion_barras, name='hoja-impresion-barras'),
+    path('api/crear-categoria/', views.api_crear_categoria, name='api-crear-categoria'),
+    path('api/crear-proveedor/', views.api_crear_proveedor, name='api-crear-proveedor'),
 ]

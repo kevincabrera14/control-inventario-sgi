@@ -78,6 +78,7 @@
         <hr class="my-3">
 
         <!-- Resto de campos del formulario (excluye codigo_barras) -->
+ <!-- Resto de campos del formulario (excluye codigo_barras) -->
         {% for field in form %}
           {% if field.name != 'codigo_barras' %}
           <div class="mb-3">
@@ -85,7 +86,26 @@
               {{ field.label }}
               {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
             </label>
-            {{ field }}
+
+            <!-- Si es Categoría o Proveedor, le agregamos el botón "+" -->
+            {% if field.name == 'categoria' %}
+              <div class="input-group">
+                {{ field }}
+                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalCategoria">
+                  <i class="fas fa-plus"></i> Nueva
+                </button>
+              </div>
+            {% elif field.name == 'proveedor' %}
+              <div class="input-group">
+                {{ field }}
+                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalProveedor">
+                  <i class="fas fa-plus"></i> Nuevo
+                </button>
+              </div>
+            {% else %}
+              {{ field }} <!-- Comportamiento normal para el resto -->
+            {% endif %}
+
             {% if field.errors %}
             <div class="invalid-feedback d-block">{{ field.errors }}</div>
             {% endif %}
@@ -95,7 +115,49 @@
           </div>
           {% endif %}
         {% endfor %}
+<!-- Modal Categoría -->
+<div class="modal fade" id="modalCategoria" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Crear Nueva Categoría</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+            <label class="form-label">Nombre de la Categoría</label>
+            <input type="text" class="form-control" id="inputNuevaCategoria" placeholder="Ej. Lácteos">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btnGuardarCategoria">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
 
+<!-- Modal Proveedor -->
+<div class="modal fade" id="modalProveedor" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Crear Nuevo Proveedor</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+            <label class="form-label">Nombre del Proveedor</label>
+            <input type="text" class="form-control" id="inputNuevoProveedor" placeholder="Ej. Distribuidora XYZ">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btnGuardarProveedor">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
       </div><!-- /card-body -->
 
       <div class="card-footer d-flex gap-2 justify-content-end">
@@ -219,6 +281,51 @@ codigoInput.addEventListener('input', function() {
 document.addEventListener('DOMContentLoaded', function() {
   var val = codigoInput.value.trim();
   if (val) mostrarPreviewCodigo(val);
+});
+
+
+
+
+
+// Función genérica para crear y actualizar el select
+function crearEntidad(url, inputId, selectId, modalId) {
+    const nombre = document.getElementById(inputId).value.trim();
+    if (!nombre) return alert('El nombre es obligatorio');
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ nombre: nombre })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // 1. Agregar la nueva opción al campo Select
+            const select = document.querySelector(`select[name="${selectId}"]`);
+            const option = new Option(data.nombre, data.id, true, true);
+            select.add(option);
+            
+            // 2. Limpiar el input y cerrar el modal
+            document.getElementById(inputId).value = '';
+            const modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
+            modal.hide();
+        } else {
+            alert('Hubo un error al guardar: ' + (data.error || ''));
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// Eventos de los botones de los modales
+document.getElementById('btnGuardarCategoria').addEventListener('click', function() {
+    crearEntidad("{% url 'api-crear-categoria' %}", 'inputNuevaCategoria', 'categoria', 'modalCategoria');
+});
+
+document.getElementById('btnGuardarProveedor').addEventListener('click', function() {
+    crearEntidad("{% url 'api-crear-proveedor' %}", 'inputNuevoProveedor', 'proveedor', 'modalProveedor');
 });
 </script>
 {% endblock %}

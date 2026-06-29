@@ -1418,3 +1418,34 @@ def hoja_impresion_barras(request, ids):
         'etiquetas': etiquetas_final,
         'copias':    copias,
     })
+
+
+    import json
+from django.http import JsonResponse
+# Asegúrate de importar tus modelos Categoria y Proveedor
+# from .models import Categoria, Proveedor 
+
+def api_crear_categoria(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            nombre = data.get('nombre')
+            if nombre:
+                # Ajusta esto si tu modelo requiere otros campos obligatorios o si está atado al negocio
+                categoria = Categoria.objects.create(nombre=nombre)
+                return JsonResponse({'success': True, 'id': categoria.id, 'nombre': categoria.nombre})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
+def api_crear_proveedor(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            nombre = data.get('nombre')
+            if nombre:
+                proveedor = Proveedor.objects.create(nombre=nombre)
+                return JsonResponse({'success': True, 'id': proveedor.id, 'nombre': proveedor.nombre})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Método no permitido'})
