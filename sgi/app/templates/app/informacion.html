@@ -526,163 +526,214 @@
             </div>
         </div>
 
-        <!-- ── 1. ¿Qué es SGI? ── -->
-        <div class="info-card open" id="card-about">
-            <button class="card-toggle" onclick="toggleCard('card-about')" aria-expanded="true">
-                <div class="toggle-icon" style="background:rgba(109,40,217,.2)">📦</div>
-                <span class="toggle-title">¿Qué es SGI?</span>
-                <svg class="toggle-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
-            </button>
-            <div class="card-body">
-                <div class="card-body-inner">
-                    <p class="desc-text">
-                        SGI es una aplicación web construida con <strong>Django 4.x</strong> que permite gestionar
-                        el inventario de una tienda o bodega de forma completa: productos, categorías,
-                        proveedores y movimientos de stock.
-                    </p>
-                    <p class="desc-text" style="margin-top:.65rem">
-                        Ofrece un <strong>dashboard</strong> con indicadores clave, registro de entradas y
-                        salidas, historial completo de movimientos, generación de reportes (PDF/Excel)
-                        y control de accesos basado en roles.
-                    </p>
+<!-- ── HERO ── -->
+<div class="hero-sgi" style="text-align:center;padding:2.5rem 1.5rem 2rem;border-bottom:1px solid rgba(109,40,217,.15)">
+    <span style="display:inline-block;background:rgba(109,40,217,.12);color:#7c3aed;font-size:12px;font-weight:600;padding:4px 14px;border-radius:999px;margin-bottom:1rem;letter-spacing:.04em">Sistema de Gestión de Inventario</span>
+    <h1 style="font-size:1.75rem;font-weight:700;color:var(--color-text, #1e1b4b);line-height:1.25;margin-bottom:.75rem">
+        Ten el control total de tu negocio,<br>en todo momento
+    </h1>
+    <p style="font-size:.95rem;color:var(--color-muted, #6b7280);max-width:520px;margin:0 auto;line-height:1.6">
+        SGI te permite saber exactamente qué tienes, cuánto vendiste y qué necesitas reponer
+        — sin hojas de cálculo, sin errores, sin sorpresas.
+    </p>
+</div>
+
+<!-- ── PARA QUÉ SIRVE ── -->
+<div class="info-card" id="card-beneficios">
+    <button class="card-toggle" onclick="toggleCard('card-beneficios')" aria-expanded="true">
+        <div class="toggle-icon" style="background:rgba(37,99,235,.18)">⚡</div>
+        <span class="toggle-title">¿Para qué sirve?</span>
+        <svg class="toggle-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <div class="card-body">
+        <div class="card-body-inner">
+            <p class="desc-text">Todo lo que necesitas para manejar tu inventario, en un solo lugar.</p>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:1rem">
+
+                <div style="background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.15);border-radius:10px;padding:1rem">
+                    <div style="font-size:1.4rem;margin-bottom:.4rem">📦</div>
+                    <strong style="font-size:.9rem;color:var(--color-text)">Control de stock en tiempo real</strong>
+                    <p style="font-size:.82rem;color:var(--color-muted);margin-top:.3rem;line-height:1.5">El inventario se actualiza al instante con cada venta o entrada de mercancía.</p>
                 </div>
+
+                <div style="background:rgba(217,119,6,.07);border:1px solid rgba(217,119,6,.2);border-radius:10px;padding:1rem">
+                    <div style="font-size:1.4rem;margin-bottom:.4rem">⚠️</div>
+                    <strong style="font-size:.9rem;color:var(--color-text)">Alertas de stock bajo</strong>
+                    <p style="font-size:.82rem;color:var(--color-muted);margin-top:.3rem;line-height:1.5">El sistema te avisa cuando un producto está por agotarse, antes de que sea tarde.</p>
+                </div>
+
+                <div style="background:rgba(5,150,105,.07);border:1px solid rgba(5,150,105,.2);border-radius:10px;padding:1rem">
+                    <div style="font-size:1.4rem;margin-bottom:.4rem">📷</div>
+                    <strong style="font-size:.9rem;color:var(--color-text)">Escáner de código de barras</strong>
+                    <p style="font-size:.82rem;color:var(--color-muted);margin-top:.3rem;line-height:1.5">Usa la cámara de tu celular o tablet para registrar productos al instante.</p>
+                </div>
+
+                <div style="background:rgba(124,58,237,.07);border:1px solid rgba(124,58,237,.18);border-radius:10px;padding:1rem">
+                    <div style="font-size:1.4rem;margin-bottom:.4rem">📊</div>
+                    <strong style="font-size:.9rem;color:var(--color-text)">Reportes de ventas</strong>
+                    <p style="font-size:.82rem;color:var(--color-muted);margin-top:.3rem;line-height:1.5">Consulta lo que se vendió por día, por producto o por período — y expórtalo a Excel o PDF.</p>
+                </div>
+
+                <div style="background:rgba(30,27,75,.06);border:1px solid rgba(30,27,75,.12);border-radius:10px;padding:1rem">
+                    <div style="font-size:1.4rem;margin-bottom:.4rem">🏢</div>
+                    <strong style="font-size:.9rem;color:var(--color-text)">Multi-negocio</strong>
+                    <p style="font-size:.82rem;color:var(--color-muted);margin-top:.3rem;line-height:1.5">Administra varias tiendas o bodegas desde el mismo sistema, cada una con sus propios datos.</p>
+                </div>
+
+                <div style="background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.15);border-radius:10px;padding:1rem">
+                    <div style="font-size:1.4rem;margin-bottom:.4rem">🔐</div>
+                    <strong style="font-size:.9rem;color:var(--color-text)">Acceso por roles</strong>
+                    <p style="font-size:.82rem;color:var(--color-muted);margin-top:.3rem;line-height:1.5">Cada empleado solo ve y hace lo que le corresponde. Tú decides quién tiene acceso a qué.</p>
+                </div>
+
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- ── 2. Funcionalidades ── -->
-        <div class="info-card" id="card-features">
-            <button class="card-toggle" onclick="toggleCard('card-features')" aria-expanded="false">
-                <div class="toggle-icon" style="background:rgba(20,83,45,.25)">⚡</div>
-                <span class="toggle-title">Funcionalidades</span>
-                <svg class="toggle-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
-            </button>
-            <div class="card-body">
-                <div class="card-body-inner">
-                    <ul class="info-list">
-                        <li>Administrar productos, categorías y proveedores (CRUD completo).</li>
-                        <li>Registrar entradas y salidas del inventario con historial y stock actual/mínimo.</li>
-                        <li>Dashboard con totales, alertas de stock bajo y últimos movimientos.</li>
-                        <li>Generar reportes exportables en PDF y Excel.</li>
-                        <li>API de consulta de stock por producto (<code style="font-family:monospace;font-size:.8rem;background:rgba(109,40,217,.2);padding:1px 5px;border-radius:4px">/api/producto/&lt;pk&gt;/stock/</code>).</li>
-                        <li>Gestión de usuarios con grupos y permisos diferenciados por rol.</li>
+<!-- ── CÓMO FUNCIONA ── -->
+<div class="info-card" id="card-como-funciona">
+    <button class="card-toggle" onclick="toggleCard('card-como-funciona')" aria-expanded="false">
+        <div class="toggle-icon" style="background:rgba(5,150,105,.18)">🛒</div>
+        <span class="toggle-title">¿Cómo funciona?</span>
+        <svg class="toggle-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <div class="card-body">
+        <div class="card-body-inner">
+            <p class="desc-text">Registrar una venta toma segundos. El bodeguero trabaja desde una pantalla simple y rápida.</p>
+            <div style="margin-top:1rem;display:flex;flex-direction:column;gap:0">
+
+                <div style="display:flex;gap:1rem;align-items:flex-start;padding:.8rem 0;border-bottom:1px solid rgba(109,40,217,.1)">
+                    <div style="min-width:28px;height:28px;border-radius:50%;background:rgba(37,99,235,.15);color:#1d4ed8;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+                    <div>
+                        <strong style="font-size:.9rem;color:var(--color-text)">Busca el producto</strong>
+                        <p style="font-size:.83rem;color:var(--color-muted);margin-top:2px;line-height:1.5">Por nombre, código o escaneando el código de barras con la cámara.</p>
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:1rem;align-items:flex-start;padding:.8rem 0;border-bottom:1px solid rgba(109,40,217,.1)">
+                    <div style="min-width:28px;height:28px;border-radius:50%;background:rgba(37,99,235,.15);color:#1d4ed8;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+                    <div>
+                        <strong style="font-size:.9rem;color:var(--color-text)">Agrégalo al carrito</strong>
+                        <p style="font-size:.83rem;color:var(--color-muted);margin-top:2px;line-height:1.5">Puedes añadir varios productos a la vez con sus cantidades exactas.</p>
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:1rem;align-items:flex-start;padding:.8rem 0;border-bottom:1px solid rgba(109,40,217,.1)">
+                    <div style="min-width:28px;height:28px;border-radius:50%;background:rgba(37,99,235,.15);color:#1d4ed8;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+                    <div>
+                        <strong style="font-size:.9rem;color:var(--color-text)">Confirma la salida</strong>
+                        <p style="font-size:.83rem;color:var(--color-muted);margin-top:2px;line-height:1.5">Con un clic, el stock se descuenta automáticamente y el movimiento queda registrado.</p>
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:1rem;align-items:flex-start;padding:.8rem 0">
+                    <div style="min-width:28px;height:28px;border-radius:50%;background:rgba(22,163,74,.15);color:#15803d;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">↩</div>
+                    <div>
+                        <strong style="font-size:.9rem;color:var(--color-text)">¿Te equivocaste? No hay problema</strong>
+                        <p style="font-size:.83rem;color:var(--color-muted);margin-top:2px;line-height:1.5">Puedes revertir cualquier venta y el stock regresa automáticamente, sin perder el historial.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── ROLES ── -->
+<div class="info-card" id="card-roles-usuarios">
+    <button class="card-toggle" onclick="toggleCard('card-roles-usuarios')" aria-expanded="false">
+        <div class="toggle-icon" style="background:rgba(124,58,237,.18)">👥</div>
+        <span class="toggle-title">¿Quién lo usa?</span>
+        <svg class="toggle-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <div class="card-body">
+        <div class="card-body-inner">
+            <p class="desc-text">Cada persona ve solo lo que necesita. El sistema se adapta al rol de cada empleado.</p>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:1rem">
+
+                <div style="background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.18);border-radius:10px;padding:1rem">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:.6rem">
+                        <span style="width:9px;height:9px;border-radius:50%;background:#2563eb;display:inline-block;flex-shrink:0"></span>
+                        <strong style="font-size:.92rem;color:var(--color-text)">Cajas</strong>
+                    </div>
+                    <p style="font-size:.82rem;color:var(--color-muted);line-height:1.5;margin-bottom:.7rem">El encargado del día a día: registra entradas, procesa ventas y consulta el stock.</p>
+                    <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:5px">
+                        <li style="font-size:.82rem;color:var(--color-muted)">✅ Punto de venta con escáner</li>
+                        <li style="font-size:.82rem;color:var(--color-muted)">✅ Registrar entradas de mercancía</li>
+                        <li style="font-size:.82rem;color:var(--color-muted)">✅ Crear y editar productos</li>
+                        <li style="font-size:.82rem;color:var(--color-muted)">✅ Reporte de ventas por día</li>
+                        <li style="font-size:.82rem;color:var(--color-muted)">✅ Revertir ventas recientes</li>
                     </ul>
                 </div>
-            </div>
-        </div>
 
-        <!-- ── 3. Modelos ── -->
-        <div class="info-card" id="card-models">
-            <button class="card-toggle" onclick="toggleCard('card-models')" aria-expanded="false">
-                <div class="toggle-icon" style="background:rgba(30,27,75,.4)">🗄️</div>
-                <span class="toggle-title">Modelos del sistema</span>
-                <svg class="toggle-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
-            </button>
-            <div class="card-body">
-                <div class="card-body-inner">
-                    <div class="badges">
-                        <span class="badge">Categoria</span>
-                        <span class="badge">Proveedor</span>
-                        <span class="badge">Producto</span>
-                        <span class="badge">MovimientoInventario</span>
+                <div style="background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.2);border-radius:10px;padding:1rem">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:.6rem">
+                        <span style="width:9px;height:9px;border-radius:50%;background:#7c3aed;display:inline-block;flex-shrink:0"></span>
+                        <strong style="font-size:.92rem;color:var(--color-text)">Encargado</strong>
                     </div>
-                    <table class="area-table" style="margin-top:.9rem">
-                        <tr><td>Categoria</td><td>Nombre y descripción para clasificar productos.</td></tr>
-                        <tr><td>Proveedor</td><td>Datos de contacto, estado activo/inactivo.</td></tr>
-                        <tr><td>Producto</td><td>Código, nombre, categoría, proveedor, precios, IVA, foto, stock actual y mínimo.</td></tr>
-                        <tr><td>Movimiento</td><td>Registro de cada entrada (E) o salida (S): cantidades, costos, stock antes/después, referencia, usuario.</td></tr>
-                    </table>
+                    <p style="font-size:.82rem;color:var(--color-muted);line-height:1.5;margin-bottom:.7rem">Visión completa del negocio: finanzas, utilidades y estado general del inventario.</p>
+                    <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:5px">
+                        <li style="font-size:.82rem;color:var(--color-muted)">✅ Dashboard con indicadores clave</li>
+                        <li style="font-size:.82rem;color:var(--color-muted)">✅ Historial financiero (ventas y compras)</li>
+                        <li style="font-size:.82rem;color:var(--color-muted)">✅ Proyecciones y utilidades</li>
+                        <li style="font-size:.82rem;color:var(--color-muted)">✅ Exportar reportes en PDF y Excel</li>
+                        <li style="font-size:.82rem;color:var(--color-muted)">✅ Gestión completa de productos</li>
+                    </ul>
                 </div>
-            </div>
-        </div>
 
-        <!-- ── 4. Roles y permisos ── -->
-        <div class="info-card" id="card-roles">
-            <button class="card-toggle" onclick="toggleCard('card-roles')" aria-expanded="false">
-                <div class="toggle-icon" style="background:rgba(59,7,100,.35)">🔐</div>
-                <span class="toggle-title">Roles y permisos</span>
-                <svg class="toggle-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
-            </button>
-            <div class="card-body">
-                <div class="card-body-inner">
-                    <table class="area-table">
-                        <tr><td>Administrador</td><td>Acceso completo: crear/editar productos, proveedores, usuarios y reportes.</td></tr>
-                        <tr><td>Bodeguero</td><td>Registrar entradas y salidas, consultar stock e historial.</td></tr>
-                        <tr><td>Gerente</td><td>Visualizar dashboard, reportes y consultas. Sin edición directa.</td></tr>
-                    </table>
-                </div>
+                
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- ── 5. Usuarios de prueba ── -->
-        <div class="info-card" id="card-users">
-            <button class="card-toggle" onclick="toggleCard('card-users')" aria-expanded="false">
-                <div class="toggle-icon" style="background:rgba(5,46,22,.35)">👤</div>
-                <span class="toggle-title">Usuarios de prueba</span>
-                <svg class="toggle-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
-            </button>
-            <div class="card-body">
-                <div class="card-body-inner">
-                    <div class="users-grid">
-                        <div class="user-card">
-                            <div class="user-avatar">🛡️</div>
-                            <div class="user-info">
-                                <div class="user-role">Administrador</div>
-                                <div class="user-creds">admin<span>/</span>admin123</div>
-                            </div>
-                        </div>
-                        <div class="user-card">
-                            <div class="user-avatar">📦</div>
-                            <div class="user-info">
-                                <div class="user-role">Bodeguero</div>
-                                <div class="user-creds">bodeguero<span>/</span>bodeguero123</div>
-                            </div>
-                        </div>
-                        <div class="user-card">
-                            <div class="user-avatar">📊</div>
-                            <div class="user-info">
-                                <div class="user-role">Gerente</div>
-                                <div class="user-creds">gerente<span>/</span>gerente123</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+<!-- ── PREGUNTAS FRECUENTES ── -->
+<div class="info-card" id="card-faq">
+    <button class="card-toggle" onclick="toggleCard('card-faq')" aria-expanded="false">
+        <div class="toggle-icon" style="background:rgba(217,119,6,.18)">❓</div>
+        <span class="toggle-title">Preguntas frecuentes</span>
+        <svg class="toggle-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <div class="card-body">
+        <div class="card-body-inner">
+            <div style="display:flex;flex-direction:column;gap:0">
 
-        <!-- ── 6. Cómo iniciar ── -->
-        <div class="info-card" id="card-start">
-            <button class="card-toggle" onclick="toggleCard('card-start')" aria-expanded="false">
-                <div class="toggle-icon" style="background:rgba(109,40,217,.2)">🚀</div>
-                <span class="toggle-title">Cómo iniciar el proyecto</span>
-                <svg class="toggle-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
-            </button>
-            <div class="card-body">
-                <div class="card-body-inner">
-                    <div class="steps">
-                        <div class="step">
-                            <div class="step-num">1</div>
-                            <div class="step-text">Ejecutar <code>python manage.py migrate</code> para crear todas las tablas.</div>
-                        </div>
-                        <div class="step">
-                            <div class="step-num">2</div>
-                            <div class="step-text">Ejecutar <code>python manage.py create_test_users</code> para generar grupos y usuarios de prueba.</div>
-                        </div>
-                        <div class="step">
-                            <div class="step-num">3</div>
-                            <div class="step-text">Opcional: <code>python manage.py seed</code> para cargar datos de ejemplo.</div>
-                        </div>
-                        <div class="step">
-                            <div class="step-num">4</div>
-                            <div class="step-text">Levantar el servidor con <code>python manage.py runserver</code></div>
-                        </div>
-                        <div class="step">
-                            <div class="step-num">5</div>
-                            <div class="step-text">Abrir <code>http://127.0.0.1:8000/login/</code> e ingresar con cualquier usuario de prueba.</div>
-                        </div>
-                    </div>
+                <div style="padding:.85rem 0;border-bottom:1px solid rgba(109,40,217,.1)">
+                    <strong style="font-size:.9rem;color:var(--color-text)">¿Necesito instalar algo en mi computador?</strong>
+                    <p style="font-size:.83rem;color:var(--color-muted);margin-top:.3rem;line-height:1.55">No. SGI funciona desde el navegador en cualquier dispositivo: computador, tablet o celular. Solo necesitas conexión a internet.</p>
                 </div>
+
+                <div style="padding:.85rem 0;border-bottom:1px solid rgba(109,40,217,.1)">
+                    <strong style="font-size:.9rem;color:var(--color-text)">¿Qué pasa si registro una venta por error?</strong>
+                    <p style="font-size:.83rem;color:var(--color-muted);margin-top:.3rem;line-height:1.55">Puedes revertirla desde el panel de movimientos. El stock vuelve a su valor anterior de forma automática.</p>
+                </div>
+
+                <div style="padding:.85rem 0;border-bottom:1px solid rgba(109,40,217,.1)">
+                    <strong style="font-size:.9rem;color:var(--color-text)">¿Puedo usarlo con escáner de código de barras?</strong>
+                    <p style="font-size:.83rem;color:var(--color-muted);margin-top:.3rem;line-height:1.55">Sí. Funciona con escáneres físicos USB y también con la cámara de tu celular o tablet, sin necesidad de hardware adicional.</p>
+                </div>
+
+                <div style="padding:.85rem 0;border-bottom:1px solid rgba(109,40,217,.1)">
+                    <strong style="font-size:.9rem;color:var(--color-text)">¿Puedo manejar más de una tienda o bodega?</strong>
+                    <p style="font-size:.83rem;color:var(--color-muted);margin-top:.3rem;line-height:1.55">Sí. El sistema soporta múltiples negocios. Cada uno tiene sus propios productos, usuarios y reportes completamente separados.</p>
+                </div>
+
+                <div style="padding:.85rem 0;border-bottom:1px solid rgba(109,40,217,.1)">
+                    <strong style="font-size:.9rem;color:var(--color-text)">¿Cómo sé cuándo un producto se está agotando?</strong>
+                    <p style="font-size:.83rem;color:var(--color-muted);margin-top:.3rem;line-height:1.55">Defines un stock mínimo por producto. Cuando el inventario baja de ese límite, el sistema lo marca en rojo y aparece en las alertas del dashboard.</p>
+                </div>
+
+                <div style="padding:.85rem 0">
+                    <strong style="font-size:.9rem;color:var(--color-text)">¿Puedo exportar los reportes?</strong>
+                    <p style="font-size:.83rem;color:var(--color-muted);margin-top:.3rem;line-height:1.55">Sí. El gerente puede descargar el inventario completo y los productos con stock bajo en formato Excel o PDF con un solo clic.</p>
+                </div>
+
             </div>
         </div>
+    </div>
+</div>
+
 
         <!-- ══════════════════════════════════════════════════════
              7. INSTALAR LA APP — Botones por plataforma
@@ -696,18 +747,27 @@
             <div class="card-body">
                 <div class="card-body-inner">
 
-                    <!-- Tabs de plataforma -->
-                    <div class="pwa-tabs">
-                        <button class="pwa-tab-btn active" onclick="switchTab('android')" id="tab-btn-android">
-                            <span class="tab-emoji">🤖</span>Android
-                        </button>
-                        <button class="pwa-tab-btn" onclick="switchTab('iphone')" id="tab-btn-iphone">
-                            <span class="tab-emoji">🍎</span>iPhone
-                        </button>
-                        <button class="pwa-tab-btn" onclick="switchTab('pc')" id="tab-btn-pc">
-                            <span class="tab-emoji">💻</span>PC / Mac
-                        </button>
-                    </div>
+<!-- Tabs de plataforma -->
+<div class="pwa-tabs">
+    <button class="pwa-tab-btn active" onclick="switchTab('android')" id="tab-btn-android">
+        <svg class="tab-emoji" viewBox="0 0 24 24" style="width:22px;height:22px;fill:#3ddc84">
+            <path d="M17.523 15.341a.9.9 0 0 1-.9-.9V10.8a.9.9 0 0 1 1.8 0v3.641a.9.9 0 0 1-.9.9zm-11.046 0a.9.9 0 0 1-.9-.9V10.8a.9.9 0 0 1 1.8 0v3.641a.9.9 0 0 1-.9.9zM7.1 9.241h9.8V17a1 1 0 0 1-1 1h-.6v2.1a.9.9 0 0 1-1.8 0V18h-2.8v2.1a.9.9 0 0 1-1.8 0V18H8.1a1 1 0 0 1-1-1V9.241zm1.45-5.112 1.06-1.06a.3.3 0 0 1 .424.424L8.97 4.557A5.476 5.476 0 0 1 12 3.6a5.476 5.476 0 0 1 3.03.957l-1.064-1.064a.3.3 0 1 1 .424-.424l1.06 1.06A5.45 5.45 0 0 1 17.5 8.3H6.5a5.45 5.45 0 0 1 2.05-4.171zM10.5 6.9a.6.6 0 1 0 0-1.2.6.6 0 0 0 0 1.2zm3 0a.6.6 0 1 0 0-1.2.6.6 0 0 0 0 1.2z"/>
+        </svg>
+        Android
+    </button>
+    <button class="pwa-tab-btn" onclick="switchTab('iphone')" id="tab-btn-iphone">
+        <svg class="tab-emoji" viewBox="0 0 24 24" style="width:22px;height:22px;fill:#ffffff">
+            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+        </svg>
+        iPhone
+    </button>
+    <button class="pwa-tab-btn" onclick="switchTab('pc')" id="tab-btn-pc">
+        <svg class="tab-emoji" viewBox="0 0 24 24" style="width:22px;height:22px;fill:#0078d4">
+            <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/>
+        </svg>
+        PC / Mac
+    </button>
+</div>
 
                     <!-- ══ TAB ANDROID ══ -->
                     <div class="pwa-tab-content active" id="tab-android">
