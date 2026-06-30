@@ -194,11 +194,15 @@ document.getElementById('btnAbrirCamara').addEventListener('click', function() {
 document.getElementById('btnCerrarCamara').addEventListener('click', detenerCamara);
 
 function iniciarCamara() {
-  html5QrCode = new Html5Qrcode("qr-reader-form");
+  html5QrCode = new Html5Qrcode("qr-reader-form", { verbose: false });
+
+  var containerWidth = document.getElementById('qr-reader-form').offsetWidth || 320;
+  var boxW = Math.min(Math.floor(containerWidth * 0.85), 400);
+  var boxH = Math.floor(boxW * 0.4);
+
   var config = {
-    fps: 12,
-    qrbox: { width: 280, height: 110 },
-    aspectRatio: 1.7,
+    fps: 24,
+    qrbox: { width: boxW, height: boxH },
     formatsToSupport: [
       Html5QrcodeSupportedFormats.CODE_128,
       Html5QrcodeSupportedFormats.EAN_13,
@@ -206,10 +210,16 @@ function iniciarCamara() {
       Html5QrcodeSupportedFormats.UPC_A,
       Html5QrcodeSupportedFormats.UPC_E,
       Html5QrcodeSupportedFormats.CODE_39,
+      Html5QrcodeSupportedFormats.CODE_93,
       Html5QrcodeSupportedFormats.ITF,
       Html5QrcodeSupportedFormats.QR_CODE,
+      Html5QrcodeSupportedFormats.DATA_MATRIX,
     ],
+    experimentalFeatures: {
+      useBarCodeDetectorIfSupported: true
+    },
   };
+
   html5QrCode.start(
     { facingMode: "environment" },
     config,
@@ -217,13 +227,12 @@ function iniciarCamara() {
     function() {}
   ).then(function() {
     escanerVivo = true;
-    setScanStatus('Listo. Apunta al código de barras…', 'text-muted');
+    setScanStatus('📷 Listo. Acerca el código de barras al recuadro…', 'text-muted');
     document.getElementById('btnAbrirCamara').innerHTML = '<i class="fas fa-camera-slash"></i> Cerrar';
   }).catch(function(err) {
     setScanStatus('No se pudo acceder a la cámara: ' + err, 'text-danger');
   });
 }
-
 function detenerCamara() {
   if (html5QrCode && escanerVivo) {
     html5QrCode.stop().catch(function() {});
