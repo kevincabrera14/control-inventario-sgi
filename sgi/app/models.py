@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 import secrets
 
+
 # ── MODELO: Control de Empresas/Negocios ─────────────────────────────
 class Negocio(models.Model):
     nombre = models.CharField(max_length=150)
