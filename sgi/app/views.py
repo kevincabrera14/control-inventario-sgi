@@ -14,7 +14,7 @@ from django.utils import timezone
 from datetime import date, timedelta
 import json
 
-from .models import Producto, MovimientoInventario, Categoria, Proveedor, Negocio, PerfilUsuario
+from .models import Producto, MovimientoInventario, Categoria, Proveedor, Negocio, PerfilUsuario, DispositivoRecordado
 from .forms import (
     LoginForm,
     ProductoForm,
@@ -36,6 +36,9 @@ def group_required(*group_names):
         return False
     return user_passes_test(in_groups)
 
+DEVICE_COOKIE_NAME = 'sgi_device_token'
+DEVICE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365  # 1 año
+
 class LoginView(View):
     def get(self, request):
         form = LoginForm()
@@ -47,10 +50,29 @@ class LoginView(View):
             user = authenticate(username=form.cleaned_data['username'], password=form.cleaned_data['password'])
             if user is not None:
                 login(request, user)
-                return redirect('dashboard')
+                request.session.set_expiry(60 * 60 * 24 * 30)  # sesión normal: 30 días
+
+                response = redirect('dashboard')
+
+                # Generar y guardar el token de "dispositivo recordado"
+                dispositivo = DispositivoRecordado.generar_para(
+                    user, user_agent=request.META.get('HTTP_USER_AGENT', '')
+                )
+                response.set_cookie(
+                    DEVICE_COOKIE_NAME,
+                    dispositivo.token,
+                    max_age=DEVICE_COOKIE_MAX_AGE,
+                    httponly=True,
+                    samesite='Lax',
+                )
+                return response
         return render(request, 'app/login.html', {'form': form, 'error': 'Credenciales inválidas'})
 
 def logout_view(request):
+    # Logout normal: cierra la sesión actual de Django.
+    # NO se borra la cookie 'sgi_device_token' a propósito: el dispositivo
+    # sigue recordado y el middleware volverá a loguear automáticamente
+    # en la próxima visita, sin pedir credenciales.
     logout(request)
     return redirect('login')
 
@@ -275,7 +297,7 @@ class ProductoUpdateView(UpdateView):
     model = Producto
     form_class = ProductoForm
     template_name = 'app/productos/form.html'
-    success_url = reverse_lazy('dashboard')
+    success_url = reverse_lazy('producto-list')
 
     def get_form_kwargs(self):
         """Pass the current negocio to the form for barcode validation."""
@@ -1431,9 +1453,8 @@ def api_crear_categoria(request):
             data = json.loads(request.body)
             nombre = data.get('nombre')
             if nombre:
-                perfil = getattr(request.user, 'perfil', None)
-                negocio = perfil.negocio if perfil else None
-                categoria = Categoria.objects.create(nombre=nombre, negocio=negocio)
+                # Ajusta esto si tu modelo requiere otros campos obligatorios o si está atado al negocio
+                categoria = Categoria.objects.create(nombre=nombre)
                 return JsonResponse({'success': True, 'id': categoria.id, 'nombre': categoria.nombre})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
@@ -1445,9 +1466,7 @@ def api_crear_proveedor(request):
             data = json.loads(request.body)
             nombre = data.get('nombre')
             if nombre:
-                perfil = getattr(request.user, 'perfil', None)
-                negocio = perfil.negocio if perfil else None
-                proveedor = Proveedor.objects.create(nombre=nombre, negocio=negocio)
+                proveedor = Proveedor.objects.create(nombre=nombre)
                 return JsonResponse({'success': True, 'id': proveedor.id, 'nombre': proveedor.nombre})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
