@@ -1,6 +1,8 @@
 from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.utils import timezone
+import secrets
 
 # ── MODELO: Control de Empresas/Negocios ─────────────────────────────
 class Negocio(models.Model):
@@ -97,3 +99,26 @@ class MovimientoInventario(models.Model):
 
     def __str__(self):
         return f"{self.get_tipo_display()} - {self.producto.nombre} ({self.cantidad})"
+
+
+# ── MODELO: Dispositivo recordado (auto-login persistente) ───────────
+class DispositivoRecordado(models.Model):
+    """
+    Guarda un token único por dispositivo/navegador. Mientras la cookie
+    'sgi_device_token' con este valor exista en el navegador, el usuario
+    entra automáticamente sin pedir usuario/contraseña, incluso después
+    de cerrar sesión manualmente.
+    """
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='dispositivos_recordados')
+    token = models.CharField(max_length=64, unique=True, db_index=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    ultimo_uso = models.DateTimeField(auto_now=True)
+    user_agent = models.CharField(max_length=255, blank=True)
+
+    @classmethod
+    def generar_para(cls, user, user_agent=''):
+        token = secrets.token_urlsafe(48)
+        return cls.objects.create(user=user, token=token, user_agent=user_agent[:255])
+
+    def __str__(self):
+        return f"Dispositivo de {self.user.username} ({self.creado_en:%d/%m/%Y})"
