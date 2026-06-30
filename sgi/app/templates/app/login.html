@@ -59,6 +59,30 @@
 
     </div>
 
+    <!-- ===== JS: Recordar usuario (autocompletar al volver a entrar) ===== -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var usernameInput = document.querySelector('input[name="username"]');
+        var passwordInput = document.querySelector('input[name="password"]');
+        if (!usernameInput) return;
+
+        // Autocompletar con el último usuario guardado
+        var savedUsername = localStorage.getItem('sgi-last-username');
+        if (savedUsername) {
+            usernameInput.value = savedUsername;
+            if (passwordInput) passwordInput.focus();
+        }
+
+        // Guardar el username cada vez que se envía el formulario
+        var loginForm = usernameInput.closest('form');
+        if (loginForm) {
+            loginForm.addEventListener('submit', function () {
+                localStorage.setItem('sgi-last-username', usernameInput.value.trim());
+            });
+        }
+    });
+    </script>
+
     <!-- ===== JS: Animación "The End" de Minecraft ===== -->
     <script>
     (function () {
