@@ -275,7 +275,7 @@ class ProductoUpdateView(UpdateView):
     model = Producto
     form_class = ProductoForm
     template_name = 'app/productos/form.html'
-    success_url = reverse_lazy('producto-list')
+    success_url = reverse_lazy('dashboard')
 
     def get_form_kwargs(self):
         """Pass the current negocio to the form for barcode validation."""
@@ -1431,8 +1431,9 @@ def api_crear_categoria(request):
             data = json.loads(request.body)
             nombre = data.get('nombre')
             if nombre:
-                # Ajusta esto si tu modelo requiere otros campos obligatorios o si está atado al negocio
-                categoria = Categoria.objects.create(nombre=nombre)
+                perfil = getattr(request.user, 'perfil', None)
+                negocio = perfil.negocio if perfil else None
+                categoria = Categoria.objects.create(nombre=nombre, negocio=negocio)
                 return JsonResponse({'success': True, 'id': categoria.id, 'nombre': categoria.nombre})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
@@ -1444,7 +1445,9 @@ def api_crear_proveedor(request):
             data = json.loads(request.body)
             nombre = data.get('nombre')
             if nombre:
-                proveedor = Proveedor.objects.create(nombre=nombre)
+                perfil = getattr(request.user, 'perfil', None)
+                negocio = perfil.negocio if perfil else None
+                proveedor = Proveedor.objects.create(nombre=nombre, negocio=negocio)
                 return JsonResponse({'success': True, 'id': proveedor.id, 'nombre': proveedor.nombre})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
