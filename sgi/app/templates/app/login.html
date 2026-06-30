@@ -33,19 +33,21 @@
             </div>
             {% endif %}
 
-            <form method="POST">
+            <form method="POST" autocomplete="on">
                 {% csrf_token %}
 
                 <div class="field-wrap">
                     <label class="field-label">Usuario</label>
                     <input type="text" name="username" class="field-input"
-                           placeholder="Ingresa tu usuario" required autofocus>
+                           placeholder="Ingresa tu usuario" required autofocus
+                           autocomplete="username">
                 </div>
 
                 <div class="field-wrap">
                     <label class="field-label">Contraseña</label>
                     <input type="password" name="password" class="field-input"
-                           placeholder="••••••••" required>
+                           placeholder="••••••••" required
+                           autocomplete="current-password">
                 </div>
 
                 <button type="submit" class="btn-login">Ingresar al sistema</button>
