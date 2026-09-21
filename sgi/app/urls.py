@@ -65,4 +65,7 @@ urlpatterns = [
     path('codigos-barras/hoja/<str:ids>/', views.hoja_impresion_barras, name='hoja-impresion-barras'),
     path('api/crear-categoria/', views.api_crear_categoria, name='api-crear-categoria'),
     path('api/crear-proveedor/', views.api_crear_proveedor, name='api-crear-proveedor'),
+	path('checkout/preparar/', views.preparar_checkout, name='preparar-checkout'),
+	path('checkout/', views.checkout_venta, name='checkout-venta'),
+	path('ticket/<int:venta_id>/', views.ticket_venta, name='ticket-venta'),
 ]

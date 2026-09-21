@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db import models, IntegrityError
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils.decorators import method_decorator
@@ -8,13 +8,14 @@ from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.db import transaction
 from django.db.models import F, Sum, Count
+from decimal import Decimal
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_POST
 from django.utils import timezone
 from datetime import date, timedelta
 import json
 
-from .models import Producto, MovimientoInventario, Categoria, Proveedor, Negocio, PerfilUsuario, DispositivoRecordado
+from .models import Producto, MovimientoInventario, Categoria, Proveedor, Negocio, PerfilUsuario, DispositivoRecordado, Venta
 from .forms import (
     LoginForm,
     ProductoForm,
@@ -626,9 +627,24 @@ def bodeguero_reportes_ventas(request):
         fecha__date__lte=fecha_hasta_obj,
     ).select_related('producto', 'usuario').order_by('-fecha')
 
+    # ------------------------------------------------------------------
+    # Totales por método de pago (corte de caja)
+    # ------------------------------------------------------------------
+    pagos_totales_qs = MovimientoInventario.objects.filter(
+        producto__negocio=negocio,
+        tipo='S',
+        fecha__date__gte=fecha_desde_obj,
+        fecha__date__lte=fecha_hasta_obj,
+    ).values('payment_method').annotate(total=Sum(F('cantidad') * F('costo_unitario')))
+    # Inicializar dict con ceros para asegurar todas las claves
+    corte_dict = {'E': 0, 'N': 0, 'B': 0, 'O': 0}
+    for entry in pagos_totales_qs:
+        corte_dict[entry['payment_method']] = entry['total'] or 0
+
     # Agrupar movimientos por día usando Python para incluir detalle completo
     from collections import defaultdict
     dias = defaultdict(lambda: {'movimientos': [], 'total_items': 0, 'total_unidades': 0})
+
 
     for mov in movimientos_ventas:
         dia_key = mov.fecha.date()
@@ -670,6 +686,11 @@ def bodeguero_reportes_ventas(request):
         'total_unidades_periodo': total_unidades_periodo,
         'dias_con_ventas': dias_con_ventas,
         'top_productos': top_productos,
+        # Totales por método de pago (corte de caja)
+        'corte_efectivo': corte_dict.get('E', 0),
+        'corte_nequi': corte_dict.get('N', 0),
+        'corte_bancolombia': corte_dict.get('B', 0),
+        'corte_otros': corte_dict.get('O', 0),
     }
     return render(request, 'app/bodeguero/reportes_ventas.html', context)
 
@@ -825,6 +846,153 @@ def revertir_movimiento(request, mov_id):
     
 
     # ─────────────────────────────────────────────────────────────────────────────
+# NUEVAS VISTAS: Checkout y Ticket
+@login_required
+@require_POST
+def preparar_checkout(request):
+    """
+    Recibe el carrito vía JSON, lo guarda en la sesión y devuelve la URL del checkout.
+    """
+    try:
+        data = json.loads(request.body)
+        items = data.get('items', [])
+        request.session['pending_cart'] = items
+        request.session.modified = True
+        return JsonResponse({'success': True, 'checkout_url': reverse('checkout-venta')})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+@login_required
+def checkout_venta(request):
+    """
+    GET  → muestra formulario de pago (template checkout_venta.html)
+    POST → crea Venta, MovimientoInventario y redirige al ticket.
+    """
+    # Obtener carrito guardado en sesión
+    cart = request.session.get('pending_cart', [])
+    if not cart:
+        # Si el carrito está vacío, volver al POS
+        return redirect('dashboard_bodeguero')
+
+    # Preparar datos para el template
+    cart_items = []
+    total_bruto = Decimal('0')
+    for it in cart:
+        try:
+            producto = Producto.objects.get(pk=it['producto_id'])
+        except Producto.DoesNotExist:
+            continue
+        cantidad = Decimal(str(it.get('cantidad', 1)))
+        subtotal = producto.precio_venta * cantidad
+        total_bruto += subtotal
+        cart_items.append({
+            'nombre': producto.nombre,
+            'precio_venta': producto.precio_venta,
+            'cantidad': cantidad,
+            'subtotal': subtotal,
+            'producto_id': producto.pk,
+        })
+
+    if request.method == 'GET':
+        return render(request, 'app/bodeguero/checkout_venta.html', {
+            'cart_items': cart_items,
+            'total_bruto': total_bruto,
+        })
+
+    # ---- POST: procesar pago y crear registros ----
+    cliente = request.POST.get('cliente_nombre', '').strip() or None
+    payment_method = request.POST.get('payment_method', 'E')
+    desconto = Decimal(request.POST.get('desconto') or 0)
+
+    # Calcular total neto (bruto - descuento)
+    total_neto = total_bruto - desconto
+
+    # Tomar IVA del primer producto (asume mismo IVA para todos)
+    iva_percent = 0
+    if cart_items:
+        first_prod = Producto.objects.get(pk=cart_items[0]['producto_id'])
+        iva_percent = first_prod.iva
+
+    perfil = getattr(request.user, 'perfil', None)
+    negocio = perfil.negocio if perfil else None
+
+    with transaction.atomic():
+        # Bloquea la fila del negocio para asignar el siguiente número de
+        # factura sin colisiones si dos bodegueros hacen checkout al mismo tiempo.
+        negocio_lock = Negocio.objects.select_for_update().get(pk=negocio.pk)
+        numero_factura = negocio_lock.siguiente_numero_factura
+        negocio_lock.siguiente_numero_factura = numero_factura + 1
+        negocio_lock.save(update_fields=['siguiente_numero_factura'])
+
+        # Crear registro de venta
+        venta = Venta.objects.create(
+            negocio=negocio,
+            numero_factura=numero_factura,
+            usuario=request.user,
+            cliente_nombre=cliente,
+            descuento=desconto,
+            iva=iva_percent,
+            total_bruto=total_bruto,
+            total_neto=total_neto,
+            payment_method=payment_method,
+        )
+
+        # Registrar cada movimiento y actualizar stock
+        for item in cart_items:
+            prod = Producto.objects.select_for_update().get(pk=item['producto_id'])
+            qty = Decimal(str(item['cantidad']))
+            stock_antes = prod.stock_actual
+            prod.stock_actual = prod.stock_actual - qty
+            prod.save()
+            MovimientoInventario.objects.create(
+                producto=prod,
+                tipo='S',
+                cantidad=qty,
+                costo_unitario=Decimal('0'),
+                precio_unitario_venta=prod.precio_venta,
+                stock_antes=stock_antes,
+                stock_despues=prod.stock_actual,
+                referencia='Venta POS',
+                usuario=request.user,
+                payment_method=payment_method,
+                venta=venta,
+            )
+
+    # Limpiar carrito de la sesión
+    request.session.pop('pending_cart', None)
+
+    return redirect('ticket-venta', venta_id=venta.id)
+
+@login_required
+def ticket_venta(request, venta_id):
+    """
+    Muestra el ticket listo para imprimir en impresoras POS (80mm / 58mm).
+    """
+    perfil = getattr(request.user, 'perfil', None)
+    negocio = perfil.negocio if perfil else None
+    venta = get_object_or_404(Venta, pk=venta_id, negocio=negocio)
+    movimientos = venta.movimientos.select_related('producto')
+
+    # Se arma la lista de líneas con el precio vigente EN EL MOMENTO DE LA VENTA.
+    # Fallback a precio_venta actual solo para ventas antiguas creadas antes de
+    # que existiera el campo precio_unitario_venta.
+    items = []
+    for mov in movimientos:
+        precio_unitario = mov.precio_unitario_venta
+        if precio_unitario is None:
+            precio_unitario = mov.producto.precio_venta
+        items.append({
+            'nombre': mov.producto.nombre,
+            'cantidad': mov.cantidad,
+            'precio_unitario': precio_unitario,
+            'subtotal': mov.cantidad * precio_unitario,
+        })
+
+    return render(request, 'app/bodeguero/ticket_pos.html', {
+        'venta': venta,
+        'items': items,
+    })
+# ─────────────────────────────────────────────────────────────────────────────
 # NUEVAS VISTAS PARA EL DASHBOARD GERENTE
 # Agregar estas funciones en views.py (dentro del archivo existente)
 #

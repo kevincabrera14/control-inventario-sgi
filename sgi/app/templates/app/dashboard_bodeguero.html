@@ -171,17 +171,41 @@
        PANEL DEL CARRITO
   ============================================================ -->
   <div class="cart-panel d-flex flex-column" id="cartPanel">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
       <h5 class="text-dark mb-0">Resumen Venta</h5>
       <button class="btn btn-sm btn-outline-secondary d-none d-lg-block"
               onclick="toggleCartSize()" title="Cambiar tamaño">↔</button>
     </div>
-    <div id="cart-items" class="flex-grow-1 overflow-auto mb-3">
+
+    <!-- Nombre del cliente para este resumen de venta (se usa para dejarlo en espera) -->
+    <div class="mb-2">
+      <input type="text" id="nombreResumenVenta" class="form-control form-control-sm"
+             placeholder="Nombre del cliente (para dejar en espera)">
+    </div>
+
+    <div id="cart-items" class="flex-grow-1 overflow-auto mb-2">
       <p class="text-muted small">No hay productos seleccionados.</p>
     </div>
+
+    <div class="mb-2">
+      <button class="btn btn-outline-warning btn-sm w-100" onclick="ponerEnEspera()">
+        <i class="fas fa-pause me-1"></i>Dejar en espera / Abrir otro
+      </button>
+    </div>
+
+    <!-- Resúmenes de venta en espera -->
+    <div class="mb-2">
+      <div class="small fw-semibold text-muted mb-1">
+        <i class="fas fa-clock me-1"></i>Carritos en espera
+      </div>
+      <div id="listaCarritosEspera" class="small" style="max-height:130px; overflow-y:auto;">
+        <p class="text-muted small mb-0">No hay carritos en espera.</p>
+      </div>
+    </div>
+
     <div class="mt-auto pt-3 border-top">
       <button id="btnConfirmar" class="btn btn-success w-100 py-2 fw-bold"
-              onclick="confirmarVenta()">
+              onclick="prepararCheckout()">
         Confirmar Salida
       </button>
     </div>
@@ -362,8 +386,34 @@ function agregarAlCarrito(id, nombre, stockDisponible, cantidadOverride, silenci
   return true;
 }
 
+// Quita un producto del carrito actual (NO borra el producto de la base de datos)
 function eliminarDelCarrito(index) {
   cart.splice(index, 1);
+  renderCart();
+}
+
+// Sube o baja la cantidad de un ítem ya en el carrito (valida contra el stock)
+function cambiarCantidad(index, delta) {
+  const item = cart[index];
+  if (!item) return;
+
+  const nuevaCantidad = Number(item.cantidad) + delta;
+
+  if (nuevaCantidad <= 0) {
+    eliminarDelCarrito(index);
+    return;
+  }
+
+  const card = document.querySelector('.product-card[data-id="' + item.producto_id + '"]');
+  if (card) {
+    const stockDisp = parseFloat((card.dataset.stock || '0').toString().replace(',', '.'));
+    if (nuevaCantidad > stockDisp) {
+      alert('Stock insuficiente. Solo hay ' + stockDisp + ' unidades disponibles de ' + item.nombre + '.');
+      return;
+    }
+  }
+
+  item.cantidad = nuevaCantidad;
   renderCart();
 }
 
@@ -376,35 +426,145 @@ function renderCart() {
   let html = '<ul class="list-group list-group-flush">';
   cart.forEach((item, index) => {
     // TEXT-DARK para que se vea sobre el fondo blanco
-    html += '<li class="list-group-item bg-transparent text-dark px-0 d-flex justify-content-between align-items-center" style="border-color:#e2e8f0;">'
-          + '<div><div class="fw-bold" style="font-size:0.9rem;">' + item.nombre + '</div>'
-          + '<small class="text-muted">Cantidad: ' + item.cantidad + '</small></div>'
-          + '<button class="btn btn-sm btn-outline-danger" onclick="eliminarDelCarrito(' + index + ')">✕</button>'
+    html += '<li class="list-group-item bg-transparent text-dark px-0" style="border-color:#e2e8f0;">'
+          +   '<div class="d-flex justify-content-between align-items-center">'
+          +     '<div class="fw-bold" style="font-size:0.9rem;">' + item.nombre + '</div>'
+          +     '<button class="btn btn-sm btn-outline-danger" onclick="eliminarDelCarrito(' + index + ')" title="Quitar del carrito">✕</button>'
+          +   '</div>'
+          +   '<div class="d-flex align-items-center gap-2 mt-1">'
+          +     '<button class="btn btn-sm btn-outline-secondary" type="button" onclick="cambiarCantidad(' + index + ', -1)">−</button>'
+          +     '<span class="small fw-semibold" style="min-width:26px; text-align:center;">' + item.cantidad + '</span>'
+          +     '<button class="btn btn-sm btn-outline-secondary" type="button" onclick="cambiarCantidad(' + index + ', 1)">+</button>'
+          +   '</div>'
           + '</li>';
   });
   html += '</ul>';
   container.innerHTML = html;
 }
 
-// ── 4. ENVÍO AL BACKEND ──────────────────────────────────────────────
-function confirmarVenta() {
+// ── 4. CARRITOS EN ESPERA (RESÚMENES DE VENTA) — localStorage ────────
+// Permite dejar el carrito actual guardado con el nombre del cliente,
+// abrir uno nuevo vacío, y luego retomar el anterior sin perder nada.
+const CARRITOS_ESPERA_KEY = 'sgi_carritos_espera';
+
+function getCarritosEspera() {
+  try {
+    return JSON.parse(localStorage.getItem(CARRITOS_ESPERA_KEY)) || {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function setCarritosEspera(data) {
+  localStorage.setItem(CARRITOS_ESPERA_KEY, JSON.stringify(data));
+}
+
+function ponerEnEspera() {
+  const inputNombre = document.getElementById('nombreResumenVenta');
+  const nombre = inputNombre.value.trim();
+
+  if (cart.length === 0) {
+    alert('El carrito está vacío, no hay nada que dejar en espera.');
+    return;
+  }
+  if (!nombre) {
+    alert('Ponle un nombre al resumen de venta (por ejemplo, el nombre del cliente) para poder identificarlo.');
+    return;
+  }
+
+  const carritos = getCarritosEspera();
+  carritos[nombre] = { items: cart, actualizado: new Date().toISOString() };
+  setCarritosEspera(carritos);
+
+  // Abrir un carrito nuevo, vacío, sin perder el que acabamos de guardar
+  cart = [];
+  inputNombre.value = '';
+  renderCart();
+  actualizarListaEspera();
+}
+
+function reanudarCarrito(nombre) {
+  const carritos = getCarritosEspera();
+  const guardado = carritos[nombre];
+  if (!guardado) return;
+
+  if (cart.length > 0) {
+    const continuar = confirm(
+      'Ya tienes productos en el carrito actual.\n' +
+      'Si continúas, el carrito actual se reemplazará por "' + nombre + '".\n' +
+      '¿Deseas dejar el carrito actual en espera primero? Presiona Cancelar y usa "Dejar en espera".\n\n' +
+      '¿Continuar de todas formas?'
+    );
+    if (!continuar) return;
+  }
+
+  cart = guardado.items;
+  delete carritos[nombre];
+  setCarritosEspera(carritos);
+
+  document.getElementById('nombreResumenVenta').value = nombre;
+  renderCart();
+  actualizarListaEspera();
+}
+
+function eliminarCarritoEspera(nombre) {
+  if (!confirm('¿Eliminar el resumen de venta en espera "' + nombre + '"? Esta acción no se puede deshacer.')) return;
+  const carritos = getCarritosEspera();
+  delete carritos[nombre];
+  setCarritosEspera(carritos);
+  actualizarListaEspera();
+}
+
+function actualizarListaEspera() {
+  const carritos = getCarritosEspera();
+  const cont = document.getElementById('listaCarritosEspera');
+  const nombres = Object.keys(carritos);
+
+  if (nombres.length === 0) {
+    cont.innerHTML = '<p class="text-muted small mb-0">No hay carritos en espera.</p>';
+    return;
+  }
+
+  let html = '';
+  nombres.forEach(nombre => {
+    const info = carritos[nombre];
+    const totalProductos = info.items.length;
+    const nombreEscapado = nombre.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    html += '<div class="d-flex justify-content-between align-items-center border rounded px-2 py-1 mb-1">'
+          +   '<div class="text-truncate me-2" style="max-width:120px;" title="' + nombre + '">'
+          +     '<strong>' + nombre + '</strong><br>'
+          +     '<span class="text-muted">' + totalProductos + ' producto(s)</span>'
+          +   '</div>'
+          +   '<div class="d-flex gap-1 flex-shrink-0">'
+          +     '<button class="btn btn-sm btn-outline-primary" type="button" onclick="reanudarCarrito(\'' + nombreEscapado + '\')" title="Reanudar este carrito">↩</button>'
+          +     '<button class="btn btn-sm btn-outline-danger" type="button" onclick="eliminarCarritoEspera(\'' + nombreEscapado + '\')" title="Eliminar">✕</button>'
+          +   '</div>'
+          + '</div>';
+  });
+  cont.innerHTML = html;
+}
+
+document.addEventListener('DOMContentLoaded', actualizarListaEspera);
+
+// ── 5. ENVÍO AL BACKEND (Confirmar Salida → Checkout) ─────────────────
+function prepararCheckout() {
   if (cart.length === 0) { alert('El carrito está vacío.'); return; }
   const btn = document.getElementById('btnConfirmar');
   btn.disabled = true;
   btn.innerHTML = 'Procesando…';
 
-  fetch("{% url 'confirmar-movimiento' %}", {
+  fetch("{% url 'preparar-checkout' %}", {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
     body: JSON.stringify({ items: cart })
   })
   .then(r => r.json())
   .then(data => {
-    if (data.status === 'success') {
-      alert('Venta confirmada y stock actualizado.');
-      location.reload();
+    if (data.success && data.checkout_url) {
+      // Redirigir al checkout (allí se pide nombre de cliente, descuento, método de pago)
+      window.location.href = data.checkout_url;
     } else {
-      alert('Error: ' + (data.error || data.message));
+      alert('Error: ' + (data.error || 'No se pudo preparar el checkout.'));
       btn.disabled = false;
       btn.innerHTML = 'Confirmar Salida';
     }
@@ -416,7 +576,7 @@ function confirmarVenta() {
   });
 }
 
-// ── 5. TAMAÑO DEL CARRITO ────────────────────────────────────────────
+// ── 6. TAMAÑO DEL CARRITO ────────────────────────────────────────────
 function toggleCartSize() {
   const panel   = document.getElementById('cartPanel');
   const content = document.getElementById('mainContent');
@@ -429,7 +589,7 @@ function toggleCartSize() {
   }
 }
 
-// ── 6. REVERTIR VENTA ────────────────────────────────────────────────
+// ── 7. REVERTIR VENTA (usado también desde Reportes de Ventas) ────────
 function revertirVenta(movId) {
   if (!confirm('¿Revertir esta venta? El stock regresará automáticamente.')) return;
   fetch('/revertir-movimiento/' + movId + '/', {
@@ -443,5 +603,35 @@ function revertirVenta(movId) {
   })
   .catch(() => alert('Error al comunicar con el servidor.'));
 }
+
+// ── 8. FORMATEO DE MILES PARA CAMPOS DE DINERO ─────────────────────────
+// Utilidad reutilizable: cualquier <input class="money-input"> en esta
+// página (o en checkout_venta.html si le agregas esta misma clase)
+// se formatea automáticamente con puntos de miles mientras se escribe,
+// evitando errores como escribir "50000" en vez de "50.000".
+function formatThousands(e) {
+  const el = e.target;
+  const cursorAlFinal = el.selectionStart === el.value.length;
+  const soloDigitosYComa = el.value.replace(/\./g, '').replace(/[^\d,]/g, '');
+  const partes = soloDigitosYComa.split(',');
+  let entero = partes[0] || '';
+  let decimales = partes[1];
+
+  entero = entero.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+  let nuevoValor = entero;
+  if (decimales !== undefined) {
+    nuevoValor += ',' + decimales.slice(0, 2);
+  }
+  el.value = nuevoValor;
+  if (cursorAlFinal) {
+    el.selectionStart = el.selectionEnd = el.value.length;
+  }
+}
+document.addEventListener('input', function (e) {
+  if (e.target.classList && e.target.classList.contains('money-input')) {
+    formatThousands(e);
+  }
+});
 </script>
 {% endblock %}

@@ -12,7 +12,7 @@
             <h2 class="mb-0">
                 <i class="fas fa-chart-bar me-2 text-primary"></i>Reporte de Ventas
             </h2>
-            <small class="text-muted">Historial de salidas agrupado por día</small>
+            <small class="text-muted">Historial de salidas agrupado por día y corte de caja real</small>
         </div>
         <div class="col-12 col-md-7 text-md-end">
             <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
@@ -21,24 +21,57 @@
         </div>
     </div>
 
-    <!-- Filtro de fechas -->
+    <!-- Filtro de fechas, búsqueda, categoría y favoritos -->
     <div class="card shadow-sm mb-4">
         <div class="card-body">
-            <form method="get" class="row g-2 align-items-end">
-                <div class="col-12 col-md-4">
+            <form method="get" id="formFiltros" class="row g-2 align-items-end">
+                <div class="col-6 col-md-2">
                     <label class="form-label fw-semibold small">Desde</label>
                     <input type="date" name="fecha_desde" class="form-control" value="{{ fecha_desde }}">
                 </div>
-                <div class="col-12 col-md-4">
+                <div class="col-6 col-md-2">
                     <label class="form-label fw-semibold small">Hasta</label>
                     <input type="date" name="fecha_hasta" class="form-control" value="{{ fecha_hasta }}">
                 </div>
-                <div class="col-12 col-md-4 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-filter me-1"></i> Aplicar
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label fw-semibold small">Producto o código de barras</label>
+                    <div class="input-group">
+                        <input type="text" name="search" id="searchReporte" class="form-control"
+                               placeholder="Nombre o código..." value="{{ search }}">
+                        <button type="button" class="btn btn-outline-secondary" id="btnCamaraReporte"
+                                title="Buscar escaneando con la cámara">📷</button>
+                    </div>
+                </div>
+
+                <div class="col-6 col-md-3">
+                    <label class="form-label fw-semibold small">Categoría</label>
+                    <select name="categoria" class="form-select">
+                        <option value="">Todas las categorías</option>
+                        {% for cat in categorias %}
+                        <option value="{{ cat.id }}" {% if categoria_seleccionada == cat.id|stringformat:"s" %}selected{% endif %}>
+                            {{ cat.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-6 col-md-2 d-flex align-items-center">
+                    <div class="form-check mb-1">
+                        <input class="form-check-input" type="checkbox" name="favoritos" value="1" id="chkFavoritos"
+                               {% if solo_favoritos %}checked{% endif %}>
+                        <label class="form-check-label small" for="chkFavoritos">
+                            <i class="fas fa-star text-warning"></i> Solo favoritos
+                        </label>
+                    </div>
+                </div>
+
+                <div class="col-12 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter me-1"></i> Aplicar filtros
                     </button>
-                    <a href="{% url 'bodeguero-reportes-ventas' %}" class="btn btn-outline-secondary" title="Últimos 30 días">
-                        <i class="fas fa-redo"></i>
+                    <a href="{% url 'bodeguero-reportes-ventas' %}" class="btn btn-outline-secondary" title="Limpiar todos los filtros">
+                        <i class="fas fa-redo me-1"></i>Limpiar
                     </a>
                 </div>
             </form>
@@ -46,7 +79,7 @@
     </div>
 
     <!-- Tarjetas de resumen -->
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-3">
         <div class="col-6 col-md-3">
             <div class="card shadow-sm text-center h-100">
                 <div class="card-body py-3">
@@ -92,6 +125,50 @@
         </div>
     </div>
 
+    <!-- Corte de caja del período (dinero real recibido, por método de pago) -->
+    <div class="mb-2">
+        <span class="fw-semibold small text-muted">
+            <i class="fas fa-cash-register me-1"></i>Corte de caja del período seleccionado
+        </span>
+    </div>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm text-center h-100 border-success">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-success">$ {{ corte_efectivo|floatformat:"0"|intcomma }}</div>
+                    <div class="text-muted small">Efectivo</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm text-center h-100 border-info">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-info">$ {{ corte_nequi|floatformat:"0"|intcomma }}</div>
+                    <div class="text-muted small">Nequi</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm text-center h-100 border-warning">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-warning">$ {{ corte_bancolombia|floatformat:"0"|intcomma }}</div>
+                    <div class="text-muted small">Bancolombia</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm text-center h-100 border-danger">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-danger">$ {{ corte_otros|floatformat:"0"|intcomma }}</div>
+                    <div class="text-muted small">Otros Bancos</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="text-end mb-4">
+        <span class="fw-bold">Total recibido en el período: $ {{ corte_total|floatformat:"0"|intcomma }}</span>
+    </div>
+
     <!-- Historial por día (acordeón) -->
     {% if dias_lista %}
     <div class="card shadow-sm">
@@ -118,7 +195,7 @@
                             data-bs-toggle="collapse"
                             data-bs-target="#collapse-{{ forloop.counter }}"
                             aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}">
-                        <div class="d-flex align-items-center gap-3 w-100 me-3">
+                        <div class="d-flex flex-column flex-md-row align-items-md-center gap-2 w-100 me-3">
                             <!-- Fecha -->
                             <div>
                                 <span class="fw-bold">
@@ -126,18 +203,29 @@
                                     {{ dia.fecha|date:"d \d\e F \d\e Y" }}
                                 </span>
                             </div>
-                            <!-- Separador visual -->
-                            <div class="ms-auto d-flex gap-3 text-end flex-shrink-0">
-                                <div>
-                                    <span class="badge bg-primary rounded-pill">
-                                        {{ dia.total_items|intcomma }} mov.
-                                    </span>
-                                </div>
-                                <div>
-                                    <span class="badge bg-danger rounded-pill">
-                                        {{ dia.total_unidades|floatformat:"0"|intcomma }} uds.
-                                    </span>
-                                </div>
+                            <!-- Corte de caja del día + contadores -->
+                            <div class="ms-md-auto d-flex flex-wrap gap-2 text-end">
+                                <span class="badge bg-success rounded-pill" title="Efectivo del día">
+                                    Efectivo $ {{ dia.corte_efectivo|floatformat:"0"|intcomma }}
+                                </span>
+                                <span class="badge bg-info rounded-pill" title="Nequi del día">
+                                    Nequi $ {{ dia.corte_nequi|floatformat:"0"|intcomma }}
+                                </span>
+                                <span class="badge bg-warning text-dark rounded-pill" title="Bancolombia del día">
+                                    Bancolombia $ {{ dia.corte_bancolombia|floatformat:"0"|intcomma }}
+                                </span>
+                                <span class="badge bg-danger rounded-pill" title="Otros bancos del día">
+                                    Otros $ {{ dia.corte_otros|floatformat:"0"|intcomma }}
+                                </span>
+                                <span class="badge bg-dark rounded-pill" title="Total del día">
+                                    Total $ {{ dia.corte_total|floatformat:"0"|intcomma }}
+                                </span>
+                                <span class="badge bg-primary rounded-pill">
+                                    {{ dia.total_items|intcomma }} mov.
+                                </span>
+                                <span class="badge bg-secondary rounded-pill">
+                                    {{ dia.total_unidades|floatformat:"0"|intcomma }} uds.
+                                </span>
                             </div>
                         </div>
                     </button>
@@ -164,7 +252,10 @@
                                     {% for mov in dia.movimientos %}
                                     <tr>
                                         <td class="ps-4 text-muted small">{{ mov.fecha|date:"H:i" }}</td>
-                                        <td class="fw-semibold">{{ mov.producto.nombre }}</td>
+                                        <td class="fw-semibold">
+                                            {{ mov.producto.nombre }}
+                                            {% if mov.producto.favorito %}<i class="fas fa-star text-warning ms-1" title="Favorito"></i>{% endif %}
+                                        </td>
                                         <td class="text-center">
                                             <span class="badge bg-danger">- {{ mov.cantidad|floatformat:"-2"|intcomma }}</span>
                                         </td>
@@ -209,8 +300,8 @@
     <div class="card shadow-sm">
         <div class="card-body text-center py-5 text-muted">
             <i class="fas fa-chart-bar fa-3x mb-3 d-block opacity-25"></i>
-            <h5>No hay ventas registradas en este período</h5>
-            <p class="mb-3">Prueba cambiando el rango de fechas o confirma una venta desde el POS.</p>
+            <h5>No hay ventas registradas con estos filtros</h5>
+            <p class="mb-3">Prueba cambiando el rango de fechas o los filtros de búsqueda.</p>
             <a href="{% url 'dashboard' %}" class="btn btn-primary">
                 <i class="fas fa-cash-register me-1"></i>Ir al Punto de Venta
             </a>
@@ -219,9 +310,34 @@
     {% endif %}
 
 </div>
+
+<!-- Modal escáner de cámara para buscar producto en el reporte -->
+<div class="modal fade" id="modalEscanerReporte" tabindex="-1" aria-labelledby="modalEscanerReporteLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalEscanerReporteLabel">
+          <i class="fas fa-camera me-2"></i>Buscar producto por código
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body p-0">
+        <div id="qr-reader-reporte" style="width:100%;"></div>
+        <div id="escaner-status-reporte" class="text-center py-2 px-3 small text-muted">
+          Apunta la cámara al código de barras…
+        </div>
+      </div>
+      <div class="modal-footer justify-content-between">
+        <small class="text-muted">El reporte se filtrará automáticamente al escanear.</small>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
     function expandirTodos() {
         document.querySelectorAll('.accordion-collapse').forEach(el => {
@@ -255,6 +371,53 @@
             }
         })
         .catch(() => alert('Error de conexión con el servidor.'));
+    }
+
+    // ── Escáner de cámara para el buscador del reporte ──────────────────
+    let html5QrCodeReporte = null;
+    let escanerReporteActivo = false;
+
+    const btnCamaraReporte = document.getElementById('btnCamaraReporte');
+    if (btnCamaraReporte) {
+        btnCamaraReporte.addEventListener('click', () => {
+            const modalEl = document.getElementById('modalEscanerReporte');
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                const modal = bootstrap.Modal.getOrCreate ? bootstrap.Modal.getOrCreate(modalEl) : new bootstrap.Modal(modalEl);
+                modal.show();
+            }
+        });
+    }
+
+    const modalEscanerReporteEl = document.getElementById('modalEscanerReporte');
+    if (modalEscanerReporteEl) {
+        modalEscanerReporteEl.addEventListener('shown.bs.modal', () => {
+            if (escanerReporteActivo) return;
+            html5QrCodeReporte = new Html5Qrcode("qr-reader-reporte");
+            html5QrCodeReporte.start(
+                { facingMode: "environment" },
+                { fps: 12, qrbox: { width: 260, height: 110 }, aspectRatio: 1.5 },
+                (codigoLeido) => {
+                    const codigo = codigoLeido.trim();
+                    if (navigator.vibrate) navigator.vibrate(80);
+                    document.getElementById('searchReporte').value = codigo;
+                    document.getElementById('formFiltros').submit();
+                },
+                () => {}
+            ).then(() => {
+                escanerReporteActivo = true;
+            }).catch(err => {
+                const el = document.getElementById('escaner-status-reporte');
+                el.textContent = 'No se pudo acceder a la cámara: ' + err;
+                el.className = 'text-center py-2 px-3 small text-danger';
+            });
+        });
+
+        modalEscanerReporteEl.addEventListener('hide.bs.modal', () => {
+            if (html5QrCodeReporte && escanerReporteActivo) {
+                html5QrCodeReporte.stop().catch(() => {});
+                escanerReporteActivo = false;
+            }
+        });
     }
 </script>
 {% endblock %}

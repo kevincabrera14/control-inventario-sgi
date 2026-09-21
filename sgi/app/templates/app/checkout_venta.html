@@ -1,0 +1,107 @@
+{% extends 'app/base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-7">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-money-bill-wave"></i> Procesar Pago</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="">
+                        {% csrf_token %} 
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nombre del Cliente</label>
+                            <input type="text" name="cliente_nombre" id="cliente" class="form-control form-control-lg" placeholder="Ej: Consumidor Final" value="Consumidor Final">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Método de Pago</label>
+                            <select name="payment_method" id="metodo_pago" class="form-select form-select-lg">
+                                <option value="E" selected>Efectivo</option>
+                                <option value="N">Nequi</option>
+                                <option value="B">Bancolombia</option>
+                                <option value="O">Otros Bancos</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Descuento (Valor Absoluto)</label>
+                            <input type="number" name="desconto" id="descuento" class="form-control form-control-lg text-danger" placeholder="0" value="0" min="0" oninput="actualizarTotales()">
+                            <small class="text-muted">Monto fijo a restar del subtotal.</small>
+                        </div>
+                        <div class="mb-3 p-3 bg-light rounded" id="caja-cambio">
+                            <label class="form-label fw-bold">Dinero Recibido</label>
+                            <input type="number" id="dinero_recibido" class="form-control form-control-lg" placeholder="0" oninput="calcularVueltas()">
+                            <h5 class="mt-2 text-success" id="vueltas-text">Vueltas: $0</h5>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-lg w-100 mt-3" id="btn-confirmar">
+                            <i class="fas fa-check-circle"></i> Confirmar Venta y Generar Ticket
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0"><i class="fas fa-shopping-cart"></i> Resumen de Venta</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush mb-3">
+                        {% for item in cart_items %}
+                        <li class="list-group-item d-flex justify-content-between lh-sm px-0">
+                            <div>
+                                <h6 class="my-0">{{ item.nombre }}</h6>
+                                <small class="text-muted">Cant: {{ item.cantidad }} x ${{ item.precio_venta }}</small>
+                            </div>
+                            <span class="text-muted">${{ item.subtotal }}</span>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item text-center text-muted">No hay productos en el carrito.</li>
+                        {% endfor %}
+                    </ul>
+                    <div class="border-top pt-3">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Subtotal (Bruto):</span>
+                            <span class="fw-bold" id="resumen-bruto" data-bruto="{{ total_bruto }}">${{ total_bruto }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Descuento aplicado:</span>
+                            <span class="text-danger fw-bold" id="resumen-descuento">-$0</span>
+                        </div>
+                        <div class="d-flex justify-content-between mt-2 pt-2 border-top">
+                            <h4 class="fw-bold">Total Neto (Aprox):</h4>
+                            <h4 class="fw-bold text-success" id="resumen-neto">${{ total_bruto }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    const totalBruto = parseFloat(document.getElementById('resumen-bruto').dataset.bruto) || 0;
+    let totalNeto = totalBruto;
+    const formatearCOP = (valor) => { return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(valor); };
+    function actualizarTotales() {
+        const descuentoInput = parseFloat(document.getElementById('descuento').value) || 0;
+        let descuentoValido = descuentoInput > totalBruto ? totalBruto : descuentoInput;
+        if (descuentoValido !== descuentoInput) document.getElementById('descuento').value = descuentoValido;
+        totalNeto = totalBruto - descuentoValido;
+        document.getElementById('resumen-descuento').innerText = "-" + formatearCOP(descuentoValido);
+        document.getElementById('resumen-neto').innerText = formatearCOP(totalNeto);
+        calcularVueltas();
+    }
+    function calcularVueltas() {
+        const recibido = parseFloat(document.getElementById('dinero_recibido').value) || 0;
+        let vueltas = recibido - totalNeto;
+        document.getElementById('vueltas-text').innerText = `Vueltas: ${formatearCOP(Math.max(0, vueltas))}`;
+    }
+    document.getElementById('metodo_pago').addEventListener('change', (e) => {
+        document.getElementById('caja-cambio').style.display = e.target.value === 'E' ? 'block' : 'none';
+    });
+    document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById('resumen-bruto').innerText = formatearCOP(totalBruto);
+        document.getElementById('resumen-neto').innerText = formatearCOP(totalBruto);
+    });
+</script>
+{% endblock %}
