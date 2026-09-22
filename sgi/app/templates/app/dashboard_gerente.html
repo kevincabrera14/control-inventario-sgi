@@ -12,89 +12,12 @@
         <div>
             <h2 class="mb-0 fw-bold" style="color:var(--color-text)">{{ user.username }}</h2>
             <p class="small mb-0" style="color:var(--color-muted)">
-                Panel de supervisión · {{ request.user.perfil.negocio.nombre }}
+                inicio · {{ request.user.perfil.negocio.nombre }}
             </p>
         </div>
-
-
-</li>
-            </ul>
-        </div>
     </div>
 
-    {# ── KPIs PRINCIPALES ───────────────────────────────────────────── #}
-    <div class="row g-3 mb-4">
-        <div class="col-6 col-lg-3">
-            <div class="glass-card p-3 h-100 border-0 shadow-sm position-relative overflow-hidden">
-                <div class="position-absolute top-0 start-0 h-100" style="width:4px;background:#6366f1;border-radius:4px 0 0 4px"></div>
-                <p class="small mb-1 ps-2 text-uppercase fw-semibold" style="font-size:10px;letter-spacing:.06em;color:var(--color-muted)">Total Productos</p>
-                <h3 class="mb-0 ps-2 fw-bold" style="color:var(--color-text)">{{ total_productos }}</h3>
-                <i class="fas fa-boxes position-absolute" style="right:12px;bottom:8px;font-size:2rem;opacity:.06;color:var(--color-accent)"></i>
-            </div>
-        </div>
-        <div class="col-6 col-lg-3">
-            <div class="glass-card p-3 h-100 border-0 shadow-sm position-relative overflow-hidden">
-                <div class="position-absolute top-0 start-0 h-100" style="width:4px;background:#d97706;border-radius:4px 0 0 4px"></div>
-                <p class="small mb-1 ps-2 text-uppercase fw-semibold" style="font-size:10px;letter-spacing:.06em;color:var(--color-muted)">Stock Bajo</p>
-                <h3 class="mb-0 ps-2 fw-bold" style="color:#d97706">{{ productos_stock_bajo|length }}</h3>
-                <i class="fas fa-exclamation-triangle position-absolute" style="right:12px;bottom:8px;font-size:2rem;opacity:.06;color:#d97706"></i>
-            </div>
-        </div>
-        <div class="col-6 col-lg-3">
-            <a href="{% url 'gerente-historial-financiero' %}" class="text-decoration-none">
-                <div class="glass-card p-3 h-100 border-0 shadow-sm position-relative overflow-hidden" style="cursor:pointer">
-                    <div class="position-absolute top-0 start-0 h-100" style="width:4px;background:#16a34a;border-radius:4px 0 0 4px"></div>
-                    <p class="small mb-1 ps-2 text-uppercase fw-semibold" style="font-size:10px;letter-spacing:.06em;color:var(--color-muted)">Historial Financiero</p>
-                    <p class="mb-0 ps-2 small fw-semibold" style="color:var(--color-accent)">Ver flujo del mes →</p>
-                    <i class="fas fa-chart-bar position-absolute" style="right:12px;bottom:8px;font-size:2rem;opacity:.06;color:#16a34a"></i>
-                </div>
-            </a>
-        </div>
-        <div class="col-6 col-lg-3">
-            <a href="{% url 'gerente-utilidades' %}" class="text-decoration-none">
-                <div class="glass-card p-3 h-100 border-0 shadow-sm position-relative overflow-hidden" style="cursor:pointer">
-                    <div class="position-absolute top-0 start-0 h-100" style="width:4px;background:#7c3aed;border-radius:4px 0 0 4px"></div>
-                    <p class="small mb-1 ps-2 text-uppercase fw-semibold" style="font-size:10px;letter-spacing:.06em;color:var(--color-muted)">Proyecciones</p>
-                    <p class="mb-0 ps-2 small fw-semibold" style="color:var(--color-accent)">Simular utilidades →</p>
-                    <i class="fas fa-chart-line position-absolute" style="right:12px;bottom:8px;font-size:2rem;opacity:.06;color:#7c3aed"></i>
-                </div>
-            </a>
-        </div>
-    </div>
 
-    {# ── ALERTA STOCK BAJO ──────────────────────────────────────────── #}
-    {% if productos_stock_bajo %}
-    <div class="alert border-0 mb-4 d-flex align-items-center gap-3"
-         style="background:rgba(217,119,6,.10);border-left:4px solid #d97706 !important;border-radius:8px">
-        <i class="fas fa-exclamation-triangle fa-lg" style="color:#d97706"></i>
-        <div>
-            <strong style="color:#92400e">{{ productos_stock_bajo|length }} producto(s) con stock bajo.</strong>
-            <a href="{% url 'gerente-stock-productos' %}?stock=bajo" class="ms-2 fw-semibold" style="font-size:.9em;color:#d97706">Ver listado →</a>
-        </div>
-    </div>
-    {% endif %}
-
-    {# ── FILTRO DE HISTORIAL ────────────────────────────────────────── #}
-    <div class="glass-card p-3 p-md-4 mb-4">
-        <h6 class="mb-3 fw-bold" style="color:var(--color-text)">
-            <i class="fas fa-filter me-2" style="color:var(--color-accent)"></i>Consultar Historial por Rango
-        </h6>
-        <form action="{% url 'historial-movimientos' %}" method="GET" class="row g-2 align-items-end">
-            <div class="col-12 col-md-4">
-                <label class="form-label small fw-semibold mb-1" style="color:var(--color-muted)">Desde</label>
-                <input type="date" name="fecha_desde" class="form-control form-control-sm" value="{{ request.GET.fecha_desde }}">
-            </div>
-            <div class="col-12 col-md-4">
-                <label class="form-label small fw-semibold mb-1" style="color:var(--color-muted)">Hasta</label>
-                <input type="date" name="fecha_hasta" class="form-control form-control-sm" value="{{ request.GET.fecha_hasta }}">
-            </div>
-            <div class="col-12 col-md-4">
-                <button type="submit" class="btn btn-primary btn-sm w-100">
-                    <i class="fas fa-search me-1"></i> Ver Historial
-                </button>
-            </div>
-        </form>
-    </div>
 
     {# ── ACCESOS RÁPIDOS ────────────────────────────────────────────── #}
     <div class="row g-3 mb-4 justify-content-center">
@@ -162,7 +85,7 @@
     {# ── ÚLTIMOS MOVIMIENTOS ────────────────────────────────────────── #}
     <div class="d-flex justify-content-between align-items-center mb-2">
         <h5 class="mb-0 fw-bold" style="color:var(--color-text)">Últimas Acciones</h5>
-        <a href="{% url 'historial-movimientos' %}" class="btn btn-sm btn-secondary">Ver todo</a>
+
     </div>
 
     {# MÓVIL: lista de cards (visible solo en xs/sm) #}
