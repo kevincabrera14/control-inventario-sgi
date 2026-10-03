@@ -1,0 +1,29 @@
+{% extends 'app/base.html' %}
+{% load humanize %}
+{% block title %}Reporte Mensual{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4"><i class="fas fa-calendar-alt me-2"></i>Reporte Mensual – {{ hoy|date:"F Y" }}</h2>
+    {% if ventas_diarias %}
+    <div class="row g-3">
+        {% for v in ventas_diarias %}
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card shadow-sm h-100 border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{{ v.dia|date:"d M Y" }}</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong># Ventas:</strong> {{ v.total_ventas }}</p>
+                    <p class="mb-1"><strong>Bruto:</strong> ${{ v.total_bruto|floatformat:"0"|intcomma }}</p>
+                    <p class="mb-1"><strong>Neto:</strong> ${{ v.total_neto|floatformat:"0"|intcomma }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-muted">No hay ventas registradas para el mes actual.</p>
+    {% endif %}
+</div>
+{% endblock %}

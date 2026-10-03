@@ -28,12 +28,7 @@
                             <input type="number" name="desconto" id="descuento" class="form-control form-control-lg text-danger" placeholder="0" value="0" min="0" oninput="actualizarTotales()">
                             <small class="text-muted">Monto fijo a restar del subtotal.</small>
                         </div>
-                        <div class="mb-3 p-3 bg-light rounded" id="caja-cambio">
-                            <label class="form-label fw-bold">Dinero Recibido</label>
-                            <input type="number" id="dinero_recibido" class="form-control form-control-lg" placeholder="0" oninput="calcularVueltas()">
-                            <h5 class="mt-2 text-success" id="vueltas-text">Vueltas: $0</h5>
-                        </div>
-                        <button type="submit" class="btn btn-success btn-lg w-100 mt-3" id="btn-confirmar">
+                                                <button type="submit" class="btn btn-success btn-lg w-100 mt-3" id="btn-confirmar">
                             <i class="fas fa-check-circle"></i> Confirmar Venta y Generar Ticket
                         </button>
                     </form>
@@ -89,16 +84,7 @@
         totalNeto = totalBruto - descuentoValido;
         document.getElementById('resumen-descuento').innerText = "-" + formatearCOP(descuentoValido);
         document.getElementById('resumen-neto').innerText = formatearCOP(totalNeto);
-        calcularVueltas();
     }
-    function calcularVueltas() {
-        const recibido = parseFloat(document.getElementById('dinero_recibido').value) || 0;
-        let vueltas = recibido - totalNeto;
-        document.getElementById('vueltas-text').innerText = `Vueltas: ${formatearCOP(Math.max(0, vueltas))}`;
-    }
-    document.getElementById('metodo_pago').addEventListener('change', (e) => {
-        document.getElementById('caja-cambio').style.display = e.target.value === 'E' ? 'block' : 'none';
-    });
     document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('resumen-bruto').innerText = formatearCOP(totalBruto);
         document.getElementById('resumen-neto').innerText = formatearCOP(totalBruto);

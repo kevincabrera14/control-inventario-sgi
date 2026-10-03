@@ -57,6 +57,7 @@ urlpatterns = [
     path('gerente/historial-financiero/', views.gerente_historial_financiero, name='gerente-historial-financiero'),
     path('gerente/stock-productos/',      views.gerente_stock_productos,       name='gerente-stock-productos'),
     path('gerente/utilidades/',           views.gerente_utilidades,            name='gerente-utilidades'),
+    path('gerente/reporte-mes/', views.reporte_mes, name='reporte-mes'),
 
 
     path('codigos-barras/',                views.codigos_barras,        name='codigos-barras'),

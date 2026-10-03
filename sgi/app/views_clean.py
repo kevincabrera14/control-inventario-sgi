@@ -1,30 +1,20 @@
-﻿import json
-import re
-from collections import defaultdict
-from datetime import date, datetime, timedelta
-from decimal import Decimal
-
-from barcode import get as barcode_get
-from barcode.writer import SVGWriter
+﻿from django.shortcuts import render, redirect, get_object_or_404
+from django.db import models, IntegrityError
+from django.urls import reverse_lazy, reverse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.core.paginator import Paginator
-from django.db import models, IntegrityError, transaction
-from django.db.models import F, Sum, Count, DecimalField
-from django.db.models.functions import TruncDate, TruncMonth, Coalesce
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse_lazy, reverse
-from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
-from django.views.decorators.http import require_POST
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-
-from .models import (
-    Producto, MovimientoInventario, Categoria, Proveedor, Negocio,
-    PerfilUsuario, DispositivoRecordado, Venta,
-)
+from django.db import transaction
+from django.db.models import F, Sum, Count
+from decimal import Decimal
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.http import require_POST
+from django.utils import timezone
+from datetime import date, timedelta
+import json
+from .models import Producto, MovimientoInventario, Categoria, Proveedor, Negocio, PerfilUsuario, DispositivoRecordado, Venta
 from .forms import (
     LoginForm,
     ProductoForm,
@@ -38,42 +28,18 @@ from .utils import (
     es_gerente,
     es_bodeguero,
 )
-
-
 def group_required(*group_names):
     def in_groups(u):
         if u.is_authenticated:
             return u.groups.filter(name__in=group_names).exists() or u.is_superuser
         return False
     return user_passes_test(in_groups)
-
-
 DEVICE_COOKIE_NAME = 'sgi_device_token'
 DEVICE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365  # 1 año
-
-SIN_PERFIL_MSG = "Su usuario no posee un Perfil de Negocio asignado. Contacte soporte."
-
-
-def _svg_codigo_barras(valor):
-    """
-    Genera el SVG (como str, listo para incrustar en HTML) de un código Code128.
-    python-barcode devuelve bytes con cabecera XML; aquí se limpia para que
-    {{ svg|safe }} funcione dentro de un template.
-    """
-    obj = barcode_get('code128', valor, writer=SVGWriter())
-    svg = obj.render()
-    if isinstance(svg, bytes):
-        svg = svg.decode('utf-8')
-    svg = re.sub(r'<\?xml[^>]*\?>', '', svg)
-    svg = re.sub(r'<!DOCTYPE[^>]*>', '', svg)
-    return svg.strip()
-
-
 class LoginView(View):
     def get(self, request):
         form = LoginForm()
         return render(request, 'app/login.html', {'form': form})
-
     def post(self, request):
         form = LoginForm(request.POST)
         if form.is_valid():
@@ -95,8 +61,6 @@ class LoginView(View):
                 )
                 return response
         return render(request, 'app/login.html', {'form': form, 'error': 'Credenciales inválidas'})
-
-
 def logout_view(request):
     # Logout normal: cierra la sesión actual de Django.
     # NO se borra la cookie 'sgi_device_token' a propósito: el dispositivo
@@ -104,8 +68,6 @@ def logout_view(request):
     # en la próxima visita, sin pedir credenciales.
     logout(request)
     return redirect('login')
-
-
 # ── ENRUTADOR CENTRAL PARA LA URL '/' ─────────────────────────────────
 @login_required
 def dashboard(request):
@@ -116,12 +78,11 @@ def dashboard(request):
             productos_qs = Producto.objects.filter(activo=True)
             movimientos_qs = MovimientoInventario.objects.all()
         else:
-            return HttpResponse(SIN_PERFIL_MSG)
+            return HttpResponse("Su usuario no posee un Perfil de Negocio asignado. Contacte soporte.")
     else:
         negocio = perfil.negocio
         productos_qs = Producto.objects.filter(activo=True, negocio=negocio)
         movimientos_qs = MovimientoInventario.objects.filter(producto__negocio=negocio)
-
     if es_administrador(user):
         total_productos = productos_qs.count()
         productos_stock_bajo = productos_qs.filter(stock_actual__lte=F('stock_minimo'))
@@ -157,8 +118,6 @@ def dashboard(request):
         return render(request, 'app/dashboard_bodeguero.html', context)
     else:
         return redirect('login')
-
-
 # ── DASHBOARDS DE TRABAJO SEPARADOS POR ROL Y TENANT ─────────────────
 @login_required
 @group_required('Administrador')
@@ -174,7 +133,7 @@ def dashboard_admin(request):
                 'valor_total': sum(p.stock_actual * p.precio_compra for p in productos),
                 'ultimos_movimientos': MovimientoInventario.objects.all().order_by('-fecha')[:10],
             })
-        return HttpResponse(SIN_PERFIL_MSG)
+        return HttpResponse("Su usuario no posee un Perfil de Negocio asignado. Contacte soporte.")
     negocio = perfil.negocio
     productos = Producto.objects.filter(activo=True, negocio=negocio)
     total_productos = productos.count()
@@ -190,8 +149,6 @@ def dashboard_admin(request):
         'valor_total': valor_total,
         'ultimos_movimientos': ultimos_movimientos,
     })
-
-
 @login_required
 @group_required('Administrador', 'Gerente')
 def dashboard_gerente(request):
@@ -211,8 +168,6 @@ def dashboard_gerente(request):
         'productos_stock_bajo': productos_stock_bajo,
         'ultimos_movimientos': ultimos_movimientos,
     })
-
-
 @login_required
 @group_required('Administrador', 'Bodeguero')
 def dashboard_bodeguero(request):
@@ -230,15 +185,12 @@ def dashboard_bodeguero(request):
         'productos_stock_bajo': productos_stock_bajo,
         'ultimos_movimientos': ultimos_movimientos,
     })
-
-
 # ── VISTAS DEL PRODUCTO FILTRADAS POR TENANT ──────────────────────────
 @method_decorator(login_required, name='dispatch')
 class ProductoListView(ListView):
     model = Producto
     template_name = 'app/productos/lista.html'
     paginate_by = 20
-
     def get_queryset(self):
         perfil = getattr(self.request.user, 'perfil', None)
         if not perfil:
@@ -251,38 +203,30 @@ class ProductoListView(ListView):
                 models.Q(codigo_barras__icontains=search)
             )
         return qs
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['search'] = self.request.GET.get('search', '')
         return context
-
-
 @method_decorator(login_required, name='dispatch')
 class ProductoDetailView(DetailView):
     model = Producto
     template_name = 'app/productos/detalle.html'
     context_object_name = 'producto'
-
     def get_queryset(self):
         perfil = getattr(self.request.user, 'perfil', None)
         if not perfil:
             return Producto.objects.none()
         return Producto.objects.filter(negocio=perfil.negocio)
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['ultimos_movimientos'] = self.object.movimientos.order_by('-fecha')[:10]
         return context
-
-
 @method_decorator([login_required, group_required('Administrador', 'Gerente', 'Bodeguero')], name='dispatch')
 class ProductoCreateView(CreateView):
     model = Producto
     form_class = ProductoForm
     template_name = 'app/productos/form.html'
     success_url = reverse_lazy('dashboard')
-
     def get_form_kwargs(self):
         """Pass the current negocio to the form for barcode validation."""
         kwargs = super().get_form_kwargs()
@@ -290,7 +234,6 @@ class ProductoCreateView(CreateView):
         if perfil:
             kwargs['negocio'] = perfil.negocio
         return kwargs
-
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         perfil = getattr(self.request.user, 'perfil', None)
@@ -298,7 +241,6 @@ class ProductoCreateView(CreateView):
             form.fields['categoria'].queryset = Categoria.objects.filter(negocio=perfil.negocio)
             form.fields['proveedor'].queryset = Proveedor.objects.filter(negocio=perfil.negocio)
         return form
-
     def form_valid(self, form):
         perfil = getattr(self.request.user, 'perfil', None)
         if perfil:
@@ -308,15 +250,12 @@ class ProductoCreateView(CreateView):
         except IntegrityError:
             form.add_error('codigo_barras', 'Ya existe un producto con este código de barras en su negocio.')
             return self.form_invalid(form)
-
-
 @method_decorator([login_required, group_required('Administrador', 'Gerente', 'Bodeguero')], name='dispatch')
 class ProductoUpdateView(UpdateView):
     model = Producto
     form_class = ProductoForm
     template_name = 'app/productos/form.html'
     success_url = reverse_lazy('producto-list')
-
     def get_form_kwargs(self):
         """Pass the current negocio to the form for barcode validation."""
         kwargs = super().get_form_kwargs()
@@ -324,13 +263,11 @@ class ProductoUpdateView(UpdateView):
         if perfil:
             kwargs['negocio'] = perfil.negocio
         return kwargs
-
     def get_queryset(self):
         perfil = getattr(self.request.user, 'perfil', None)
         if not perfil:
             return Producto.objects.none()
         return Producto.objects.filter(negocio=perfil.negocio)
-
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         perfil = getattr(self.request.user, 'perfil', None)
@@ -338,7 +275,6 @@ class ProductoUpdateView(UpdateView):
             form.fields['categoria'].queryset = Categoria.objects.filter(negocio=perfil.negocio)
             form.fields['proveedor'].queryset = Proveedor.objects.filter(negocio=perfil.negocio)
         return form
-
     def form_valid(self, form):
         perfil = getattr(self.request.user, 'perfil', None)
         if perfil:
@@ -348,8 +284,6 @@ class ProductoUpdateView(UpdateView):
         except IntegrityError:
             form.add_error('codigo_barras', 'Ya existe un producto con este código de barras en su negocio.')
             return self.form_invalid(form)
-
-
 @login_required
 @group_required('Administrador', 'Gerente')
 def producto_delete(request, pk):
@@ -362,7 +296,6 @@ def producto_delete(request, pk):
     if not perfil:
         return HttpResponse("Su usuario no posee un Perfil de Negocio asignado.", status=403)
     producto = get_object_or_404(Producto, pk=pk, negocio=perfil.negocio)
-
     if request.method == 'POST':
         with transaction.atomic():
             stock_restante = producto.stock_actual
@@ -382,17 +315,13 @@ def producto_delete(request, pk):
             # Marcar como inactivo (soft delete)
             producto.activo = False
             producto.save()
-
         # Redirigir al listado del gerente si viene de ahí, si no al general
         referer = request.META.get('HTTP_REFERER', '')
         if 'gerente' in referer:
             return redirect('gerente-stock-productos')
         return redirect('producto-list')
-
     # GET: no debería llegar aquí, pero redirigimos por seguridad
     return redirect('gerente-stock-productos')
-
-
 # ── PROCESOS DE INVENTARIO SEGUROS ───────────────────────────────────
 @login_required
 def entrada_create(request):
@@ -400,7 +329,6 @@ def entrada_create(request):
     if not perfil:
         return HttpResponse("Su usuario no posee un Perfil de Negocio asignado.")
     negocio = perfil.negocio
-
     if request.method == 'POST':
         form = EntradaForm(request.POST)
         if form.is_valid():
@@ -430,17 +358,14 @@ def entrada_create(request):
         if producto_id:
             initial['producto'] = producto_id
         form = EntradaForm(initial=initial)
-    form.fields['producto'].queryset = Producto.objects.filter(activo=True, negocio=negocio)
+        form.fields['producto'].queryset = Producto.objects.filter(activo=True, negocio=negocio)
     return render(request, 'app/movimientos/entrada.html', {'form': form})
-
-
 @login_required
 def salida_create(request):
     perfil = getattr(request.user, 'perfil', None)
     if not perfil:
         return HttpResponse("Su usuario no posee un Perfil de Negocio asignado.")
     negocio = perfil.negocio
-
     if request.method == 'POST':
         form = SalidaForm(request.POST)
         if form.is_valid():
@@ -455,7 +380,7 @@ def salida_create(request):
                     producto.save()
                     MovimientoInventario.objects.create(
                         producto=producto,
-                        tipo='S',
+                            tipo='S',
                         cantidad=cantidad,
                         costo_unitario=0,
                         stock_antes=stock_antes,
@@ -472,10 +397,8 @@ def salida_create(request):
         if producto_id:
             initial['producto'] = producto_id
         form = SalidaForm(initial=initial)
-    form.fields['producto'].queryset = Producto.objects.filter(activo=True, negocio=negocio)
+        form.fields['producto'].queryset = Producto.objects.filter(activo=True, negocio=negocio)
     return render(request, 'app/movimientos/salida.html', {'form': form})
-
-
 @login_required
 def confirmar_movimiento(request):
     if request.method == 'POST':
@@ -489,6 +412,7 @@ def confirmar_movimiento(request):
             with transaction.atomic():
                 for item in items:
                     producto = get_object_or_404(Producto, pk=item['producto_id'], negocio=negocio)
+                    from decimal import Decimal
                     cantidad = Decimal(str(item['cantidad']))
                     if producto.stock_actual < cantidad:
                         return JsonResponse({'status': 'error', 'message': f'Stock insuficiente para {producto.nombre}'}, status=400)
@@ -497,7 +421,7 @@ def confirmar_movimiento(request):
                     producto.save()
                     MovimientoInventario.objects.create(
                         producto=producto,
-                        tipo='S',
+                            tipo='S',
                         cantidad=cantidad,
                         costo_unitario=0,
                         stock_antes=stock_antes,
@@ -509,8 +433,6 @@ def confirmar_movimiento(request):
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
     return JsonResponse({'status': 'error', 'message': 'Método no permitido'}, status=405)
-
-
 @login_required
 def historial_movimientos(request):
     perfil = getattr(request.user, 'perfil', None)
@@ -531,13 +453,12 @@ def historial_movimientos(request):
         if form.cleaned_data.get('fecha_hasta'):
             movimientos = movimientos.filter(fecha__date__lte=form.cleaned_data['fecha_hasta'])
     form.fields['producto'].queryset = Producto.objects.filter(negocio=negocio)
+    from django.core.paginator import Paginator
     paginator = Paginator(movimientos, 30)
     page = request.GET.get('page')
     page_obj = paginator.get_page(page)
     return render(request, 'app/movimientos/historial.html', {'form': form, 'page_obj': page_obj})
-
-
-# ── LISTA DE PRODUCTOS CON CRUD COMPLETO (BODEGUERO) ──────────────────
+# ── NUEVA VISTA: LISTA DE PRODUCTOS CON CRUD COMPLETO (BODEGUERO) ─────
 @login_required
 @group_required('Administrador', 'Gerente', 'Bodeguero')
 def bodeguero_lista_productos(request):
@@ -549,13 +470,10 @@ def bodeguero_lista_productos(request):
     if not perfil:
         return HttpResponse("Su usuario no posee un Perfil de Negocio asignado.")
     negocio = perfil.negocio
-
     search = request.GET.get('search', '').strip()
     categoria_id = request.GET.get('categoria', '')
     stock_filtro = request.GET.get('stock', '')
-
     productos = Producto.objects.filter(activo=True, negocio=negocio).select_related('categoria', 'proveedor').order_by('nombre')
-
     if search:
         productos = productos.filter(
             models.Q(nombre__icontains=search) |
@@ -567,13 +485,11 @@ def bodeguero_lista_productos(request):
         productos = productos.filter(stock_actual__lte=F('stock_minimo'))
     elif stock_filtro == 'sin':
         productos = productos.filter(stock_actual=0)
-
     categorias = Categoria.objects.filter(negocio=negocio)
-
+    from django.core.paginator import Paginator
     paginator = Paginator(productos, 25)
     page = request.GET.get('page')
     page_obj = paginator.get_page(page)
-
     context = {
         'page_obj': page_obj,
         'search': search,
@@ -583,184 +499,110 @@ def bodeguero_lista_productos(request):
         'total_productos': productos.count(),
     }
     return render(request, 'app/bodeguero/lista_productos.html', context)
-
-
-# ── REPORTES DE VENTAS POR DÍA (BODEGUERO) ────────────────────────────
+# ── NUEVA VISTA: REPORTES DE VENTAS POR DÍA (BODEGUERO) ──────────────
 @login_required
 @group_required('Administrador', 'Gerente', 'Bodeguero')
 def bodeguero_reportes_ventas(request):
     """
-    Resumen diario de ventas por método de pago.
-
-    - El corte de caja (tarjetas superiores) se calcula SOLO con la fecha de
-      hoy cuando el usuario no aplica filtros. Al cambiar el día, las
-      tarjetas arrancan en 0 automáticamente; no hay nada que "resetear"
-      porque siempre se filtra por la fecha actual.
-    - Si el usuario envía filtros (periodo / fecha_desde / fecha_hasta),
-      el corte refleja ese rango.
-    - El listado día a día (historial) sigue mostrando el rango completo.
+    Vista de reportes de ventas agrupados por día.
+    Muestra los últimos 30 días con movimientos de salida (ventas).
+    El usuario puede expandir cada día para ver el detalle de productos vendidos.
     """
     perfil = getattr(request.user, 'perfil', None)
     if not perfil:
         return HttpResponse("Su usuario no posee un Perfil de Negocio asignado.")
     negocio = perfil.negocio
-
-    # Fecha local (zona horaria del proyecto), no la del servidor/UTC
-    hoy = timezone.localdate()
-
-    periodo = request.GET.get('periodo')
+    # Rango de fechas: últimos 30 días por defecto, o el que el usuario seleccione
     fecha_hasta = request.GET.get('fecha_hasta', '')
     fecha_desde = request.GET.get('fecha_desde', '')
-    filtro_manual = bool(periodo or fecha_desde or fecha_hasta)
-
     try:
-        if periodo:
-            if periodo == 'hoy':
-                fecha_desde_obj = fecha_hasta_obj = hoy
-            elif periodo == 'semana':
-                fecha_hasta_obj = hoy
-                fecha_desde_obj = hoy - timedelta(days=6)
-            elif periodo == 'mes':
-                fecha_hasta_obj = hoy
-                fecha_desde_obj = hoy - timedelta(days=29)
-            elif periodo == 'mes_anterior':
-                first_day_this_month = hoy.replace(day=1)
-                last_day_prev_month = first_day_this_month - timedelta(days=1)
-                fecha_hasta_obj = last_day_prev_month
-                fecha_desde_obj = last_day_prev_month.replace(day=1)
-            elif periodo == 'trimestre':
-                fecha_hasta_obj = hoy
-                fecha_desde_obj = hoy - timedelta(days=89)
-            else:
-                fecha_hasta_obj = hoy
-                fecha_desde_obj = hoy - timedelta(days=29)
-        else:
-            fecha_hasta_obj = datetime.strptime(fecha_hasta, '%Y-%m-%d').date() if fecha_hasta else hoy
-            fecha_desde_obj = datetime.strptime(fecha_desde, '%Y-%m-%d').date() if fecha_desde else hoy - timedelta(days=29)
+        from datetime import datetime
+        fecha_hasta_obj = datetime.strptime(fecha_hasta, '%Y-%m-%d').date() if fecha_hasta else date.today()
+        fecha_desde_obj = datetime.strptime(fecha_desde, '%Y-%m-%d').date() if fecha_desde else date.today() - timedelta(days=29)
     except ValueError:
-        fecha_hasta_obj = hoy
-        fecha_desde_obj = hoy - timedelta(days=29)
-
-    # Rango del corte de caja: HOY por defecto, o el rango filtrado
-    if filtro_manual:
-        corte_desde, corte_hasta = fecha_desde_obj, fecha_hasta_obj
-    else:
-        corte_desde = corte_hasta = hoy
-
-    # Base: movimientos SOLO del negocio del usuario
-    base_qs = MovimientoInventario.objects.filter(producto__negocio=negocio)
-
-    # Movimientos del rango (para el listado día a día)
-    movimientos_ventas = base_qs.filter(
-        fecha__date__gte=fecha_desde_obj,
-        fecha__date__lte=fecha_hasta_obj,
+        fecha_hasta_obj = date.today()
+        fecha_desde_obj = date.today() - timedelta(days=29)
+    # Movimientos de salida (ventas) en el rango seleccionado
+    movimientos_ventas = MovimientoInventario.objects.filter(
+            producto__negocio=negocio,
+            tipo='S',
+            fecha__date__gte=fecha_desde_obj,
+            fecha__date__lte=fecha_hasta_obj,
     ).select_related('producto', 'usuario').order_by('-fecha')
-
     # ------------------------------------------------------------------
-    # Corte de caja por método de pago (solo el rango del corte)
+    # Totales por método de pago (corte de caja)
     # ------------------------------------------------------------------
-    corte_qs = base_qs.filter(
-        fecha__date__gte=corte_desde,
-        fecha__date__lte=corte_hasta,
-    )
-    # Ingresos = dinero recibido por ventas (tipo S) a precio de venta.
-    # Si un movimiento antiguo no guardó precio, se usa el precio actual.
-    ingresos_qs = corte_qs.filter(tipo='S').values('payment_method').annotate(
-        total=Sum(
-            F('cantidad') * Coalesce(F('precio_unitario_venta'), F('producto__precio_venta')),
-            output_field=DecimalField(max_digits=16, decimal_places=2),
-        )
-    )
-    # Egresos = dinero pagado en compras/entradas (tipo E) a costo, si se registró método.
-    egresos_qs = corte_qs.filter(tipo='E').values('payment_method').annotate(
-        total=Sum(
-            F('cantidad') * F('costo_unitario'),
-            output_field=DecimalField(max_digits=16, decimal_places=2),
-        )
-    )
-
+    # 1️⃣ Ingresos (entradas) – se calculan usando `costo_unitario`
+    ingresos_qs = MovimientoInventario.objects.filter(
+            producto__negocio=negocio,
+        tipo='E',
+            fecha__date__gte=fecha_desde_obj,
+            fecha__date__lte=fecha_hasta_obj,
+    ).values('payment_method').annotate(total=Sum(F('cantidad') * F('costo_unitario')))
+    # 2️⃣ Egresos (salidas) – se calculan usando `precio_unitario_venta`
+    egresos_qs = MovimientoInventario.objects.filter(
+            producto__negocio=negocio,
+            tipo='S',
+            fecha__date__gte=fecha_desde_obj,
+            fecha__date__lte=fecha_hasta_obj,
+    ).values('payment_method').annotate(total=Sum(F('cantidad') * F('precio_unitario_venta')))
+    # Inicializar dicts con ceros para asegurar todas las claves
     ingresos_dict = {'E': 0, 'N': 0, 'B': 0, 'O': 0}
     egresos_dict = {'E': 0, 'N': 0, 'B': 0, 'O': 0}
     for entry in ingresos_qs:
-        if entry['payment_method'] in ingresos_dict:
-            ingresos_dict[entry['payment_method']] = entry['total'] or 0
+        ingresos_dict[entry['payment_method']] = entry['total'] or 0
     for entry in egresos_qs:
-        if entry['payment_method'] in egresos_dict:
-            egresos_dict[entry['payment_method']] = entry['total'] or 0
-
-    # Neto por método (ingreso - egreso)
+        egresos_dict[entry['payment_method']] = entry['total'] or 0
+    # Net total por método (ingreso - egreso)
     corte_dict = {k: ingresos_dict.get(k, 0) - egresos_dict.get(k, 0) for k in ingresos_dict}
-
-    total_ingresos = sum(ingresos_dict.values())
-    total_egresos = sum(egresos_dict.values())
-    flujo_neto = total_ingresos - total_egresos
+    # Guardar también los subtotales por separado para la plantilla
     corte_ingreso = ingresos_dict
     corte_egreso = egresos_dict
-
-    # Contadores del rango del listado
-    rango_qs = base_qs.filter(
-        fecha__date__gte=fecha_desde_obj,
-        fecha__date__lte=fecha_hasta_obj,
-    )
-    total_salidas = rango_qs.filter(tipo='S').count()
-    total_entradas = rango_qs.filter(tipo='E').count()
-    dias_con_actividad = rango_qs.dates('fecha', 'day', order='ASC').distinct().count()
-
-    # ------------------------------------------------------------------
-    # Agrupar por día (fecha LOCAL) para el historial día a día
-    # ------------------------------------------------------------------
+    # Agrupar movimientos por día usando Python para incluir detalle completo
+    from collections import defaultdict
     dias = defaultdict(lambda: {'movimientos': [], 'total_items': 0, 'total_unidades': 0})
     for mov in movimientos_ventas:
-        fecha_mov = mov.fecha
-        if timezone.is_aware(fecha_mov):
-            fecha_mov = timezone.localtime(fecha_mov)
-        dia_key = fecha_mov.date()
+        dia_key = mov.fecha.date()
         dias[dia_key]['movimientos'].append(mov)
         dias[dia_key]['total_items'] += 1
         dias[dia_key]['total_unidades'] += float(mov.cantidad)
+        # Acumular ingresos por método de pago (ventas)
         ingresos_diario = dias[dia_key].setdefault('ingresos_por_metodo', {'E': 0, 'N': 0, 'B': 0, 'O': 0})
-        # Solo las ventas (S) suman como ingreso del día
-        if mov.tipo == 'S' and mov.payment_method in ingresos_diario:
-            precio_unitario = mov.precio_unitario_venta if mov.precio_unitario_venta is not None else mov.producto.precio_venta
-            ingresos_diario[mov.payment_method] += float(mov.cantidad) * float(precio_unitario)
-
-    # Todos los días del rango, incluso sin ventas (arrancan en 0)
-    current = fecha_desde_obj
-    while current <= fecha_hasta_obj:
-        dias.setdefault(current, {'movimientos': [], 'total_items': 0, 'total_unidades': 0,
-                                  'ingresos_por_metodo': {'E': 0, 'N': 0, 'B': 0, 'O': 0}})
-        current += timedelta(days=1)
-
+        precio_unitario = mov.precio_unitario_venta if mov.precio_unitario_venta is not None else mov.producto.precio_venta
+        monto = float(mov.cantidad) * float(precio_unitario)
+        ingresos_diario[mov.payment_method] = ingresos_diario.get(mov.payment_method, 0) + monto
+    # Convertir a lista ordenada de más reciente a más antigua
     dias_lista = sorted(
         [{'fecha': k, **v} for k, v in dias.items()],
         key=lambda x: x['fecha'],
         reverse=True
-    )
-
+)
+    # Resumen general del período
     total_ventas_periodo = sum(d['total_items'] for d in dias_lista)
     total_unidades_periodo = sum(d['total_unidades'] for d in dias_lista)
     dias_con_ventas = len(dias_lista)
-
+    # Producto más vendido del período
+    from django.db.models import Sum as DjSum
     top_productos = (
-        rango_qs.filter(tipo='S')
-        .values('producto__nombre')
-        .annotate(total_vendido=Sum('cantidad'))
-        .order_by('-total_vendido')[:5]
+        MovimientoInventario.objects.filter(
+            producto__negocio=negocio,
+            tipo='S',
+            fecha__date__gte=fecha_desde_obj,
+            fecha__date__lte=fecha_hasta_obj,
     )
-
-    context = {
-        'dias_lista': dias_lista,
-        'fecha_desde': fecha_desde_obj.strftime('%Y-%m-%d'),
-        'fecha_hasta': fecha_hasta_obj.strftime('%Y-%m-%d'),
-        'total_ventas_periodo': total_ventas_periodo,
-        'total_unidades_periodo': total_unidades_periodo,
-        'dias_con_ventas': dias_con_ventas,
-        'top_productos': top_productos,
-        # Rango que cubre el corte de caja (para el título de las tarjetas)
-        'corte_fecha_desde': corte_desde,
-        'corte_fecha_hasta': corte_hasta,
-        'corte_es_hoy': (corte_desde == corte_hasta == hoy),
-        # Totales por método de pago (corte de caja)
+    .values('producto__nombre')
+    .annotate(total_vendido=DjSum('cantidad'))
+    .order_by('-total_vendido')[:5]
+)
+context = {
+    'dias_lista': dias_lista,
+    'fecha_desde': fecha_desde_obj.strftime('%Y-%m-%d'),
+    'fecha_hasta': fecha_hasta_obj.strftime('%Y-%m-%d'),
+    'total_ventas_periodo': total_ventas_periodo,
+    'total_unidades_periodo': total_unidades_periodo,
+    'dias_con_ventas': dias_con_ventas,
+    'top_productos': top_productos,
+    # Totales por método de pago (corte de caja)
         'corte_efectivo': corte_dict.get('E', 0),
         'corte_nequi': corte_dict.get('N', 0),
         'corte_bancolombia': corte_dict.get('B', 0),
@@ -775,17 +617,8 @@ def bodeguero_reportes_ventas(request):
         'corte_ingreso_otros': corte_ingreso.get('O', 0),
         'corte_egreso_otros': corte_egreso.get('O', 0),
         'corte_total': sum(corte_dict.values()),
-        'total_ingresos': total_ingresos,
-        'total_egresos': total_egresos,
-        'total_salidas': total_salidas,
-        'total_entradas': total_entradas,
-        'flujo_neto': flujo_neto,
-        'dias_con_actividad': dias_con_actividad,
     }
     return render(request, 'app/bodeguero/reportes_ventas.html', context)
-
-
-# ── ÚLTIMOS MOVIMIENTOS CON REVERTIR (BODEGUERO) ──────────────────────
 @login_required
 @group_required('Administrador', 'Gerente', 'Bodeguero')
 def bodeguero_revertir_venta(request):
@@ -807,69 +640,53 @@ def bodeguero_revertir_venta(request):
     return render(request, 'app/bodeguero/revertir_venta.html', {
         'ultimos_movimientos': ultimos_movimientos,
     })
-
-
 # ── VISTAS DE PROVEEDORES FILTRADAS POR TENANT ────────────────────────
 @method_decorator(login_required, name='dispatch')
 class ProveedorListView(ListView):
     model = Proveedor
     template_name = 'app/proveedores/lista.html'
     paginate_by = 20
-
     def get_queryset(self):
         perfil = getattr(self.request.user, 'perfil', None)
         if not perfil:
             return Proveedor.objects.none()
         return Proveedor.objects.filter(activo=True, negocio=perfil.negocio)
-
-
 @method_decorator([login_required, group_required('Administrador')], name='dispatch')
 class ProveedorCreateView(CreateView):
     model = Proveedor
     form_class = ProveedorForm
     template_name = 'app/proveedores/form.html'
     success_url = reverse_lazy('proveedor-list')
-
     def form_valid(self, form):
         perfil = getattr(self.request.user, 'perfil', None)
         if perfil:
             form.instance.negocio = perfil.negocio
         return super().form_valid(form)
-
-
 @method_decorator([login_required, group_required('Administrador')], name='dispatch')
 class ProveedorUpdateView(UpdateView):
     model = Proveedor
     form_class = ProveedorForm
     template_name = 'app/proveedores/form.html'
     success_url = reverse_lazy('proveedor-list')
-
     def get_queryset(self):
         perfil = getattr(self.request.user, 'perfil', None)
         if not perfil:
             return Proveedor.objects.none()
         return Proveedor.objects.filter(negocio=perfil.negocio)
-
-
 @method_decorator(login_required, name='dispatch')
 class ProveedorDetailView(DetailView):
     model = Proveedor
     template_name = 'app/proveedores/detalle.html'
     context_object_name = 'proveedor'
-
     def get_queryset(self):
         perfil = getattr(self.request.user, 'perfil', None)
         if not perfil:
             return Proveedor.objects.none()
         return Proveedor.objects.filter(negocio=perfil.negocio)
-
-
 # ── ALIASES DE COMPATIBILIDAD CON URLs.PY antiguas ───────────────────
 entrada_inventario = entrada_create
 salida_inventario = salida_create
 HistorialMovimientosView = historial_movimientos
-
-
 # ── REPORTES EXPORTABLES FILTRADOS POR NEGOCIO ───────────────────────
 @login_required
 @group_required('Administrador', 'Gerente')
@@ -878,8 +695,6 @@ def reporte_inventario_excel(request):
     perfil = getattr(request.user, 'perfil', None)
     queryset = Producto.objects.filter(activo=True, negocio=perfil.negocio if perfil else None)
     return generar_excel_inventario(queryset)
-
-
 @login_required
 @group_required('Administrador', 'Gerente')
 def reporte_inventario_pdf(request):
@@ -887,8 +702,6 @@ def reporte_inventario_pdf(request):
     perfil = getattr(request.user, 'perfil', None)
     queryset = Producto.objects.filter(activo=True, negocio=perfil.negocio if perfil else None)
     return generar_pdf_inventario(queryset)
-
-
 @login_required
 @group_required('Administrador', 'Gerente')
 def reporte_stock_bajo_pdf(request):
@@ -896,26 +709,18 @@ def reporte_stock_bajo_pdf(request):
     perfil = getattr(request.user, 'perfil', None)
     queryset = Producto.objects.filter(activo=True, negocio=perfil.negocio if perfil else None, stock_actual__lte=F('stock_minimo'))
     return generar_pdf_inventario(queryset)
-
-
 @login_required
 @group_required('Administrador', 'Gerente')
 def reporte_movimientos_excel(request):
     return HttpResponse('Reporte movimientos Excel placeholder')
-
-
 # ── UTILERÍAS / API ───────────────────────────────────────────────────
 @login_required
 def producto_stock_api(request, pk):
     perfil = getattr(request.user, 'perfil', None)
     producto = get_object_or_404(Producto, pk=pk, negocio=perfil.negocio if perfil else None)
     return JsonResponse({'stock_actual': float(producto.stock_actual), 'nombre': producto.nombre})
-
-
 def informacion(request):
     return render(request, 'app/informacion.html')
-
-
 @login_required
 @require_POST
 def revertir_movimiento(request, mov_id):
@@ -937,539 +742,8 @@ def revertir_movimiento(request, mov_id):
             {'status': 'error', 'message': 'Solo se pueden revertir movimientos de salida (ventas).'},
             status=400
         )
-
-
-# ── GERENTE: STOCK Y PRODUCTOS ────────────────────────────────────────
-@login_required
-@group_required('Administrador', 'Gerente')
-def gerente_stock_productos(request):
-    """
-    Stock y Productos (gerente): resumen, filtros (búsqueda, categoría, estado
-    de stock) y listado paginado de los productos activos del negocio.
-    """
-    perfil = getattr(request.user, 'perfil', None)
-    if not perfil:
-        return HttpResponse("Su usuario no posee un Perfil de Negocio asignado.")
-    negocio = perfil.negocio
-
-    search = request.GET.get('search', '').strip()
-    categoria_id = request.GET.get('categoria', '')
-    stock_filtro = request.GET.get('stock', '')
-
-    base = Producto.objects.filter(activo=True, negocio=negocio)
-
-    # Tarjetas de resumen (sobre todos los productos activos, sin filtros)
-    total_productos = base.count()
-    productos_stock_bajo = base.filter(stock_actual__lte=F('stock_minimo')).count()
-    productos_sin_stock = base.filter(stock_actual__lte=0).count()
-    valor_inventario = base.aggregate(
-        total=Sum(F('stock_actual') * F('precio_compra'),
-                  output_field=models.DecimalField(max_digits=18, decimal_places=2))
-    )['total'] or 0
-
-    # Listado filtrado
-    productos = base.select_related('categoria', 'proveedor').order_by('nombre')
-    if search:
-        productos = productos.filter(
-            models.Q(nombre__icontains=search) |
-            models.Q(codigo_barras__icontains=search)
-        )
-    if categoria_id:
-        productos = productos.filter(categoria_id=categoria_id)
-    if stock_filtro == 'bajo':
-        productos = productos.filter(stock_actual__lte=F('stock_minimo'))
-    elif stock_filtro == 'sin':
-        productos = productos.filter(stock_actual__lte=0)
-
-    paginator = Paginator(productos, 25)
-    page_obj = paginator.get_page(request.GET.get('page'))
-
-    context = {
-        'page_obj': page_obj,
-        'search': search,
-        'categorias': Categoria.objects.filter(negocio=negocio),
-        'categoria_seleccionada': categoria_id,
-        'stock_filtro': stock_filtro,
-        'total_productos': total_productos,
-        'productos_stock_bajo': productos_stock_bajo,
-        'productos_sin_stock': productos_sin_stock,
-        'valor_inventario': valor_inventario,
-    }
-    return render(request, 'app/gerente/stock_productos.html', context)
-
-
-# ── GERENTE: UTILIDADES Y PROYECCIONES ────────────────────────────────
-@login_required
-@group_required('Administrador', 'Gerente')
-def gerente_utilidades(request):
-    """Utilidades y Proyecciones: calcula KPIs, top productos y evolución mensual."""
-    perfil = getattr(request.user, 'perfil', None)
-    if not perfil:
-        return HttpResponse("Su usuario no posee un Perfil de Negocio asignado.")
-    negocio = perfil.negocio
-
-    # Parámetros de rango de fechas
-    periodo = request.GET.get('periodo')
-    fecha_desde_str = request.GET.get('fecha_desde', '')
-    fecha_hasta_str = request.GET.get('fecha_hasta', '')
-    today = timezone.localdate()
-
-    if periodo:
-        if periodo == 'hoy':
-            fecha_desde_obj = fecha_hasta_obj = today
-        elif periodo == 'mes':
-            fecha_desde_obj = today.replace(day=1)
-            fecha_hasta_obj = today
-        elif periodo == 'trimestre':
-            # últimos 3 meses inclusive del mes actual
-            first_day = today.replace(day=1)
-            start_month = (first_day.month - 2 - 1) % 12 + 1
-            year = first_day.year - (1 if start_month > first_day.month else 0)
-            fecha_desde_obj = datetime(year, start_month, 1).date()
-            fecha_hasta_obj = today
-        elif periodo == 'año':
-            fecha_desde_obj = today.replace(month=1, day=1)
-            fecha_hasta_obj = today
-        else:
-            # fallback a últimos 30 días
-            fecha_hasta_obj = today
-            fecha_desde_obj = today - timedelta(days=29)
-    else:
-        try:
-            if fecha_desde_str:
-                fecha_desde_obj = datetime.strptime(fecha_desde_str, '%Y-%m-%d').date()
-            else:
-                fecha_desde_obj = today - timedelta(days=29)
-            if fecha_hasta_str:
-                fecha_hasta_obj = datetime.strptime(fecha_hasta_str, '%Y-%m-%d').date()
-            else:
-                fecha_hasta_obj = today
-        except ValueError:
-            fecha_desde_obj = today - timedelta(days=29)
-            fecha_hasta_obj = today
-
-    # Base queryset filtrada por negocio
-    base_qs = MovimientoInventario.objects.filter(producto__negocio=negocio)
-
-    # Ingresos brutos (tipo 'S')
-    ingresos_qs = base_qs.filter(
-        tipo='S',
-        fecha__date__gte=fecha_desde_obj,
-        fecha__date__lte=fecha_hasta_obj,
-    ).annotate(
-        ingreso=F('cantidad') * Coalesce(F('precio_unitario_venta'), F('producto__precio_venta'))
-    )
-    ingresos_total = ingresos_qs.aggregate(total=Sum('ingreso', output_field=DecimalField()))['total'] or Decimal('0')
-
-    # Costos de ventas (tipo 'E')
-    costos_qs = base_qs.filter(
-        tipo='E',
-        fecha__date__gte=fecha_desde_obj,
-        fecha__date__lte=fecha_hasta_obj,
-    ).annotate(
-        costo=F('cantidad') * F('costo_unitario')
-    )
-    costos_total = costos_qs.aggregate(total=Sum('costo', output_field=DecimalField()))['total'] or Decimal('0')
-
-    utilidad_bruta = ingresos_total - costos_total
-    margen_bruto = (utilidad_bruta / ingresos_total * 100) if ingresos_total != 0 else Decimal('0')
-
-    # Ventas promedio por mes dentro del rango
-    days = (fecha_hasta_obj - fecha_desde_obj).days + 1
-    months = max(1, round(days / 30))
-    ventas_promedio_mes = ingresos_total / Decimal(months) if months else Decimal('0')
-
-    # Top 10 productos por utilidad
-    sales = base_qs.filter(
-        tipo='S',
-        fecha__date__gte=fecha_desde_obj,
-        fecha__date__lte=fecha_hasta_obj,
-    ).values('producto_id', 'producto__nombre', 'producto__precio_compra').annotate(
-        total_ventas=Sum(F('cantidad') * Coalesce(F('precio_unitario_venta'), F('producto__precio_venta')), output_field=DecimalField()),
-        total_cantidad=Sum('cantidad')
-    )
-    top_products = []
-    for entry in sales:
-        total_costo = entry['total_cantidad'] * entry['producto__precio_compra']
-        utilidad = entry['total_ventas'] - total_costo
-        margen = (utilidad / entry['total_ventas'] * 100) if entry['total_ventas'] != 0 else Decimal('0')
-        top_products.append({
-            'nombre': entry['producto__nombre'],
-            'total_ventas': entry['total_ventas'],
-            'total_costo': total_costo,
-            'utilidad': utilidad,
-            'margen': margen,
-        })
-    top_productos = sorted(top_products, key=lambda x: x['utilidad'], reverse=True)[:10]
-
-    # Utilidad mensual histórica
-    sales_month = base_qs.filter(
-        tipo='S',
-        fecha__date__gte=fecha_desde_obj,
-        fecha__date__lte=fecha_hasta_obj,
-    ).annotate(mes=TruncMonth('fecha')).values('mes').annotate(
-        ingresos=Sum(F('cantidad') * Coalesce(F('precio_unitario_venta'), F('producto__precio_venta')), output_field=DecimalField())
-    )
-    costs_month = base_qs.filter(
-        tipo='E',
-        fecha__date__gte=fecha_desde_obj,
-        fecha__date__lte=fecha_hasta_obj,
-    ).annotate(mes=TruncMonth('fecha')).values('mes').annotate(
-        costo=Sum(F('cantidad') * F('costo_unitario'), output_field=DecimalField())
-    )
-    monthly = {}
-    for m in sales_month:
-        key = m['mes'].date()
-        monthly[key] = {'ingresos': m['ingresos'] or Decimal('0'), 'costo': Decimal('0')}
-    for m in costs_month:
-        key = m['mes'].date()
-        if key not in monthly:
-            monthly[key] = {'ingresos': Decimal('0'), 'costo': m['costo'] or Decimal('0')}
-        else:
-            monthly[key]['costo'] = m['costo'] or Decimal('0')
-    utilidad_mensual = []
-    for mes_fecha, data in sorted(monthly.items(), reverse=True):
-        ingresos = data['ingresos']
-        costo = data['costo']
-        utilidad = ingresos - costo
-        margen = (utilidad / ingresos * 100) if ingresos != 0 else Decimal('0')
-        utilidad_mensual.append({
-            'nombre_mes': mes_fecha.strftime('%b %Y'),
-            'ingresos': ingresos,
-            'costo': costo,
-            'utilidad': utilidad,
-            'margen': margen,
-        })
-
-    context = {
-        'fecha_desde': fecha_desde_obj.strftime('%Y-%m-%d'),
-        'fecha_hasta': fecha_hasta_obj.strftime('%Y-%m-%d'),
-        'utilidades': {
-            'ingresos_brutos': ingresos_total,
-            'costo_ventas': costos_total,
-            'utilidad_bruta': utilidad_bruta,
-            'margen_bruto': margen_bruto,
-            'ventas_promedio_mes': ventas_promedio_mes,
-        },
-        'top_productos': top_productos,
-        'utilidad_mensual': utilidad_mensual,
-    }
-    return render(request, 'app/gerente/utilidades.html', context)
-
-
-# ── GERENTE: HISTORIAL FINANCIERO ─────────────────────────────────────
-@login_required
-@group_required('Administrador', 'Gerente')
-def gerente_historial_financiero(request):
-    """
-    Vista del historial financiero para el rol de gerente.
-    Muestra los movimientos y totales del rango seleccionado (por defecto, el día actual).
-    Todo filtrado por el negocio del usuario.
-    """
-    perfil = getattr(request.user, 'perfil', None)
-    if not perfil:
-        return HttpResponse("Su usuario no posee un Perfil de Negocio asignado.")
-    negocio = perfil.negocio
-
-    today = timezone.localdate()
-    periodo = request.GET.get('periodo')
-    if periodo:
-        if periodo == 'hoy':
-            fecha_desde_obj = fecha_hasta_obj = today
-        elif periodo == 'semana':
-            fecha_hasta_obj = today
-            fecha_desde_obj = today - timedelta(days=6)
-        elif periodo == 'mes':
-            fecha_hasta_obj = today
-            fecha_desde_obj = today - timedelta(days=29)
-        elif periodo == 'mes_anterior':
-            first_day_this_month = today.replace(day=1)
-            last_day_prev_month = first_day_this_month - timedelta(days=1)
-            fecha_hasta_obj = last_day_prev_month
-            fecha_desde_obj = last_day_prev_month.replace(day=1)
-        elif periodo == 'trimestre':
-            fecha_hasta_obj = today
-            fecha_desde_obj = today - timedelta(days=89)
-        else:
-            fecha_desde_obj = fecha_hasta_obj = today
-    else:
-        fecha_desde_str = request.GET.get('fecha_desde', '')
-        fecha_hasta_str = request.GET.get('fecha_hasta', '')
-        try:
-            fecha_desde_obj = datetime.strptime(fecha_desde_str, '%Y-%m-%d').date() if fecha_desde_str else today
-            fecha_hasta_obj = datetime.strptime(fecha_hasta_str, '%Y-%m-%d').date() if fecha_hasta_str else today
-        except ValueError:
-            fecha_desde_obj = fecha_hasta_obj = today
-    fecha_desde_str = fecha_desde_obj.strftime('%Y-%m-%d')
-    fecha_hasta_str = fecha_hasta_obj.strftime('%Y-%m-%d')
-
-    # Base: SOLO movimientos del negocio del usuario, dentro del rango
-    rango_qs = MovimientoInventario.objects.filter(
-        producto__negocio=negocio,
-        fecha__date__gte=fecha_desde_obj,
-        fecha__date__lte=fecha_hasta_obj,
-    )
-
-    # Ingresos = ventas (S) a precio de venta; Egresos = compras/entradas (E) a costo
-    ingresos_qs = rango_qs.filter(tipo='S').values('payment_method').annotate(
-        total=Sum(
-            F('cantidad') * Coalesce(F('precio_unitario_venta'), F('producto__precio_venta')),
-            output_field=DecimalField(max_digits=16, decimal_places=2),
-        )
-    )
-    egresos_qs = rango_qs.filter(tipo='E').values('payment_method').annotate(
-        total=Sum(
-            F('cantidad') * F('costo_unitario'),
-            output_field=DecimalField(max_digits=16, decimal_places=2),
-        )
-    )
-
-    ingresos_dict = {'E': 0, 'N': 0, 'B': 0, 'O': 0}
-    egresos_dict = {'E': 0, 'N': 0, 'B': 0, 'O': 0}
-    for entry in ingresos_qs:
-        if entry['payment_method'] in ingresos_dict:
-            ingresos_dict[entry['payment_method']] = entry['total'] or 0
-    for entry in egresos_qs:
-        if entry['payment_method'] in egresos_dict:
-            egresos_dict[entry['payment_method']] = entry['total'] or 0
-
-    # Corte neto por método
-    corte_dict = {k: ingresos_dict.get(k, 0) - egresos_dict.get(k, 0) for k in ingresos_dict}
-
-    movimientos_entradas = list(rango_qs.filter(tipo='E').select_related('producto').order_by('-fecha'))
-    movimientos_salidas = list(rango_qs.filter(tipo='S').select_related('producto').order_by('-fecha'))
-
-    # Totales generales
-    total_ingresos = sum(ingresos_dict.values())
-    total_egresos = sum(egresos_dict.values())
-    total_salidas = rango_qs.filter(tipo='S').count()
-    total_entradas = rango_qs.filter(tipo='E').count()
-    dias_con_actividad = rango_qs.dates('fecha', 'day', order='ASC').distinct().count()
-    flujo_neto = total_ingresos - total_egresos
-
-    resumen = {
-        'saldo_efectivo': 0,
-        'corte_efectivo': corte_dict.get('E', 0),
-        'corte_nequi': corte_dict.get('N', 0),
-        'corte_bancolombia': corte_dict.get('B', 0),
-        'corte_otros': corte_dict.get('O', 0),
-        'ingresos_efectivo': ingresos_dict.get('E', 0),
-        'egresos_efectivo': egresos_dict.get('E', 0),
-        'ingresos_nequi': ingresos_dict.get('N', 0),
-        'egresos_nequi': egresos_dict.get('N', 0),
-        'ingresos_bancolombia': ingresos_dict.get('B', 0),
-        'egresos_bancolombia': egresos_dict.get('B', 0),
-        'ingresos_otros': ingresos_dict.get('O', 0),
-        'egresos_otros': egresos_dict.get('O', 0),
-        'corte_total': sum(corte_dict.values()),
-        'total_ingresos': total_ingresos,
-        'total_egresos': total_egresos,
-        'total_salidas': total_salidas,
-        'total_entradas': total_entradas,
-        'flujo_neto': flujo_neto,
-        'dias_con_actividad': dias_con_actividad,
-        'movimientos_entradas': movimientos_entradas,
-        'movimientos_salidas': movimientos_salidas,
-    }
-
-    # Lista de días con movimientos para la tabla día a día (fecha LOCAL)
-    movimientos_detalle = list(rango_qs.select_related('producto').order_by('-fecha'))
-    dias = defaultdict(lambda: {'movimientos': [], 'total_items': 0, 'total_unidades': 0})
-    for mov in movimientos_detalle:
-        fecha_mov = mov.fecha
-        if timezone.is_aware(fecha_mov):
-            fecha_mov = timezone.localtime(fecha_mov)
-        dia_key = fecha_mov.date()
-        dias[dia_key]['movimientos'].append(mov)
-        dias[dia_key]['total_items'] += 1
-        dias[dia_key]['total_unidades'] += float(mov.cantidad)
-        ingresos_diario = dias[dia_key].setdefault('ingresos_por_metodo', {'E': 0, 'N': 0, 'B': 0, 'O': 0})
-        if mov.tipo == 'S' and mov.payment_method in ingresos_diario:
-            precio_unitario = mov.precio_unitario_venta if mov.precio_unitario_venta is not None else mov.producto.precio_venta
-            ingresos_diario[mov.payment_method] += float(mov.cantidad) * float(precio_unitario)
-
-    # Asegurar que los días sin movimientos estén presentes
-    current = fecha_desde_obj
-    while current <= fecha_hasta_obj:
-        dias.setdefault(current, {'movimientos': [], 'total_items': 0, 'total_unidades': 0,
-                                  'ingresos_por_metodo': {'E': 0, 'N': 0, 'B': 0, 'O': 0}})
-        current += timedelta(days=1)
-    dias_lista = sorted([{'fecha': k, **v} for k, v in dias.items()], key=lambda x: x['fecha'], reverse=True)
-    meses_lista = []  # Placeholder, can be implemented later
-
-    return render(request, 'app/gerente/historial_financiero.html', {
-        'resumen': resumen,
-        'fecha_desde': fecha_desde_str,
-        'fecha_hasta': fecha_hasta_str,
-        'dias_lista': dias_lista,
-        'meses_lista': meses_lista,
-        'movimientos_detalle': movimientos_detalle,
-    })
-
-
-# ── CÓDIGOS DE BARRAS ─────────────────────────────────────────────────
-@login_required
-@group_required('Administrador', 'Gerente')
-def codigos_barras(request):
-    """Listado de productos con su código de barras (Code128) renderizado en SVG."""
-    perfil = getattr(request.user, 'perfil', None)
-    if not perfil:
-        return HttpResponse("Su usuario no posee un Perfil de Negocio asignado.")
-    negocio = perfil.negocio
-
-    search = request.GET.get('search', '').strip()
-    sin_codigo = request.GET.get('sin_codigo') == 'on'
-
-    productos_qs = Producto.objects.filter(activo=True, negocio=negocio)
-
-    if search:
-        productos_qs = productos_qs.filter(
-            models.Q(nombre__icontains=search) |
-            models.Q(codigo_barras__icontains=search)
-        )
-    if sin_codigo:
-        productos_qs = productos_qs.filter(models.Q(codigo_barras__isnull=True) | models.Q(codigo_barras=''))
-
-    productos_qs = productos_qs.select_related('categoria', 'proveedor').order_by('nombre')
-
-    productos_data = []
-    for prod in productos_qs:
-        svg = None
-        if prod.codigo_barras:
-            try:
-                svg = _svg_codigo_barras(prod.codigo_barras)
-            except Exception:
-                svg = None
-        productos_data.append({'producto': prod, 'svg': svg})
-
-    context = {
-        'search': search,
-        'sin_codigo': sin_codigo,
-        'productos_data': productos_data,
-    }
-    return render(request, 'app/barras/codigos_barras.html', context)
-
-
-@login_required
-@group_required('Administrador', 'Gerente')
-def barcode_svg(request, pk):
-    """Devuelve el código de barras del producto como imagen SVG."""
-    perfil = getattr(request.user, 'perfil', None)
-    if not perfil:
-        return HttpResponse("Su usuario no posee un Perfil de Negocio asignado.", status=403)
-    producto = get_object_or_404(Producto, pk=pk, negocio=perfil.negocio)
-    if not producto.codigo_barras:
-        return HttpResponse("Producto sin código de barras.", status=400)
-    try:
-        barcode_obj = barcode_get('code128', producto.codigo_barras, writer=SVGWriter())
-        svg = barcode_obj.render()
-        return HttpResponse(svg, content_type='image/svg+xml')
-    except Exception as e:
-        return HttpResponse(f"Error generando SVG: {e}", status=500)
-
-
-@login_required
-@group_required('Administrador', 'Gerente')
-def buscar_por_codigo(request):
-    """Busca un producto del negocio por su código de barras (JSON)."""
-    codigo = request.GET.get('codigo', '').strip()
-    perfil = getattr(request.user, 'perfil', None)
-    if not perfil:
-        return JsonResponse({'found': False, 'error': 'Perfil no encontrado'}, status=403)
-    producto = Producto.objects.filter(negocio=perfil.negocio, codigo_barras=codigo).first()
-    if producto:
-        data = {
-            'found': True,
-            'nombre': producto.nombre,
-            'stock_actual': float(producto.stock_actual),
-            'precio_venta': float(producto.precio_venta),
-            'stock_bajo': producto.stock_actual <= producto.stock_minimo,
-        }
-        return JsonResponse(data)
-    else:
-        return JsonResponse({'found': False})
-
-
-@login_required
-@group_required('Administrador', 'Gerente')
-def hoja_impresion_barras(request, ids):
-    """
-    Hoja imprimible con los códigos de barras de los productos indicados.
-    `ids` admite cualquier separador (ej. "1,2,3" o "1-2-3").
-    """
-    perfil = getattr(request.user, 'perfil', None)
-    if not perfil:
-        return HttpResponse("Su usuario no posee un Perfil de Negocio asignado.", status=403)
-    id_list = [int(i) for i in re.findall(r'\d+', str(ids))]
-    productos = Producto.objects.filter(
-        negocio=perfil.negocio, pk__in=id_list
-    ).exclude(codigo_barras__isnull=True).exclude(codigo_barras='').order_by('nombre')
-
-    celdas = []
-    for prod in productos:
-        try:
-            svg = _svg_codigo_barras(prod.codigo_barras)
-        except Exception:
-            continue
-        celdas.append(
-            f'<div class="et"><div class="n">{prod.nombre}</div>{svg}'
-            f'<div class="c">{prod.codigo_barras}</div></div>'
-        )
-    html = (
-        '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Hoja de códigos de barras</title>'
-        '<style>body{font-family:Arial,sans-serif;margin:10mm}'
-        '.hoja{display:flex;flex-wrap:wrap;gap:6mm}'
-        '.et{width:60mm;border:1px dashed #999;padding:3mm;text-align:center;page-break-inside:avoid}'
-        '.et svg{width:100%;height:auto}.n{font-size:11px;font-weight:bold}.c{font-size:11px}'
-        '@media print{.no-print{display:none}}</style></head><body>'
-        '<button class="no-print" onclick="window.print()">Imprimir</button>'
-        f'<div class="hoja">{"".join(celdas) or "<p>No hay productos con código de barras.</p>"}</div>'
-        '</body></html>'
-    )
-    return HttpResponse(html)
-
-
-# ── REPORTE DEL MES ───────────────────────────────────────────────────
-@login_required
-@group_required('Administrador', 'Gerente')
-def reporte_mes(request):
-    """Reporte mensual con tarjetas diarias acumuladas."""
-    perfil = getattr(request.user, 'perfil', None)
-    if not perfil:
-        return HttpResponse("Su usuario no posee un Perfil de Negocio asignado.")
-    hoy = timezone.localdate()
-    inicio_mes = hoy.replace(day=1)
-    ventas_diarias = (
-        Venta.objects.filter(negocio=perfil.negocio, fecha__date__gte=inicio_mes, fecha__date__lte=hoy)
-        .annotate(dia=TruncDate('fecha'))
-        .values('dia')
-        .annotate(
-            total_bruto=Sum('total_bruto'),
-            total_neto=Sum('total_neto'),
-            total_ventas=Count('id')
-        )
-        .order_by('-dia')
-    )
-    return render(request, 'app/gerente/reporte_mes.html',
-                  {'ventas_diarias': ventas_diarias, 'hoy': hoy})
-
-
-# ── API placeholder views ─────────────────────────────────────────────
-@login_required
-@group_required('Administrador')
-def api_crear_categoria(request):
-    """Placeholder for API crear categoría."""
-    return JsonResponse({"detail": "API crear categoría not implemented."}, status=501)
-
-
-@login_required
-@group_required('Administrador')
-def api_crear_proveedor(request):
-    """Placeholder for API crear proveedor."""
-    return JsonResponse({"detail": "API crear proveedor not implemented."}, status=501)
-
-
-# ── CHECKOUT Y TICKET ─────────────────────────────────────────────────
+    # ─────────────────────────────────────────────────────────────────────────────
+# NUEVAS VISTAS: Checkout y Ticket
 @login_required
 @require_POST
 def preparar_checkout(request):
@@ -1484,32 +758,24 @@ def preparar_checkout(request):
         return JsonResponse({'success': True, 'checkout_url': reverse('checkout-venta')})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
-
-
 @login_required
 def checkout_venta(request):
     """
     GET  → muestra formulario de pago (template checkout_venta.html)
     POST → crea Venta, MovimientoInventario y redirige al ticket.
     """
-    perfil = getattr(request.user, 'perfil', None)
-    if not perfil:
-        return HttpResponse(SIN_PERFIL_MSG, status=403)
-    negocio = perfil.negocio
-
     # Obtener carrito guardado en sesión
     cart = request.session.get('pending_cart', [])
     if not cart:
         # Si el carrito está vacío, volver al POS
         return redirect('dashboard_bodeguero')
-
-    # Preparar datos para el template (solo productos del negocio del usuario)
+    # Preparar datos para el template
     cart_items = []
     total_bruto = Decimal('0')
     for it in cart:
         try:
-            producto = Producto.objects.get(pk=it['producto_id'], negocio=negocio)
-        except (Producto.DoesNotExist, KeyError, ValueError):
+            producto = Producto.objects.get(pk=it['producto_id'])
+        except Producto.DoesNotExist:
             continue
         cantidad = Decimal(str(it.get('cantidad', 1)))
         subtotal = producto.precio_venta * cantidad
@@ -1521,30 +787,24 @@ def checkout_venta(request):
             'subtotal': subtotal,
             'producto_id': producto.pk,
         })
-
     if request.method == 'GET':
         return render(request, 'app/bodeguero/checkout_venta.html', {
             'cart_items': cart_items,
             'total_bruto': total_bruto,
         })
-
     # ---- POST: procesar pago y crear registros ----
     cliente = request.POST.get('cliente_nombre', '').strip() or None
     payment_method = request.POST.get('payment_method', 'E')
-    try:
-        desconto = Decimal(request.POST.get('desconto') or 0)
-    except Exception:
-        desconto = Decimal('0')
-
+    desconto = Decimal(request.POST.get('desconto') or 0)
     # Calcular total neto (bruto - descuento)
     total_neto = total_bruto - desconto
-
     # Tomar IVA del primer producto (asume mismo IVA para todos)
     iva_percent = 0
     if cart_items:
         first_prod = Producto.objects.get(pk=cart_items[0]['producto_id'])
         iva_percent = first_prod.iva
-
+    perfil = getattr(request.user, 'perfil', None)
+    negocio = perfil.negocio if perfil else None
     with transaction.atomic():
         # Bloquea la fila del negocio para asignar el siguiente número de
         # factura sin colisiones si dos bodegueros hacen checkout al mismo tiempo.
@@ -1552,7 +812,6 @@ def checkout_venta(request):
         numero_factura = negocio_lock.siguiente_numero_factura
         negocio_lock.siguiente_numero_factura = numero_factura + 1
         negocio_lock.save(update_fields=['siguiente_numero_factura'])
-
         # Crear registro de venta
         venta = Venta.objects.create(
             negocio=negocio,
@@ -1565,7 +824,6 @@ def checkout_venta(request):
             total_neto=total_neto,
             payment_method=payment_method,
         )
-
         # Registrar cada movimiento y actualizar stock
         for item in cart_items:
             prod = Producto.objects.select_for_update().get(pk=item['producto_id'])
@@ -1575,7 +833,7 @@ def checkout_venta(request):
             prod.save()
             MovimientoInventario.objects.create(
                 producto=prod,
-                tipo='S',
+                    tipo='S',
                 cantidad=qty,
                 costo_unitario=Decimal('0'),
                 precio_unitario_venta=prod.precio_venta,
@@ -1586,12 +844,9 @@ def checkout_venta(request):
                 payment_method=payment_method,
                 venta=venta,
             )
-
     # Limpiar carrito de la sesión
     request.session.pop('pending_cart', None)
     return redirect('ticket-venta', venta_id=venta.id)
-
-
 @login_required
 def ticket_venta(request, venta_id):
     """
@@ -1601,7 +856,6 @@ def ticket_venta(request, venta_id):
     negocio = perfil.negocio if perfil else None
     venta = get_object_or_404(Venta, pk=venta_id, negocio=negocio)
     movimientos = venta.movimientos.select_related('producto')
-
     # Se arma la lista de líneas con el precio vigente EN EL MOMENTO DE LA VENTA.
     # Fallback a precio_venta actual solo para ventas antiguas creadas antes de
     # que existiera el campo precio_unitario_venta.
@@ -1616,8 +870,13 @@ def ticket_venta(request, venta_id):
             'precio_unitario': precio_unitario,
             'subtotal': mov.cantidad * precio_unitario,
         })
-
     return render(request, 'app/bodeguero/ticket_pos.html', {
         'venta': venta,
         'items': items,
     })
+# ─────────────────────────────────────────────────────────────────────────────
+# NUEVAS VISTAS: Checkout y Ticket
+
+
+
+

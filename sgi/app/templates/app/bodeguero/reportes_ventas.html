@@ -10,125 +10,24 @@
     <div class="row mb-4 align-items-center g-3">
         <div class="col-12 col-md-5">
             <h2 class="mb-0">
-                <i class="fas fa-chart-bar me-2 text-primary"></i>Reporte de Ventas
+                <i class="fas fa-chart-bar me-2 text-primary"></i>resumen diario 
             </h2>
-            <small class="text-muted">Historial de salidas agrupado por día y corte de caja real</small>
         </div>
         <div class="col-12 col-md-7 text-md-end">
             <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-1"></i> Volver al POS
+                <i class="fas fa-arrow-left me-1"></i> 
             </a>
         </div>
     </div>
 
-    <!-- Filtro de fechas, búsqueda, categoría y favoritos -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <form method="get" id="formFiltros" class="row g-2 align-items-end">
-                <div class="col-6 col-md-2">
-                    <label class="form-label fw-semibold small">Desde</label>
-                    <input type="date" name="fecha_desde" class="form-control" value="{{ fecha_desde }}">
-                </div>
-                <div class="col-6 col-md-2">
-                    <label class="form-label fw-semibold small">Hasta</label>
-                    <input type="date" name="fecha_hasta" class="form-control" value="{{ fecha_hasta }}">
-                </div>
 
-                <div class="col-12 col-md-3">
-                    <label class="form-label fw-semibold small">Producto o código de barras</label>
-                    <div class="input-group">
-                        <input type="text" name="search" id="searchReporte" class="form-control"
-                               placeholder="Nombre o código..." value="{{ search }}">
-                        <button type="button" class="btn btn-outline-secondary" id="btnCamaraReporte"
-                                title="Buscar escaneando con la cámara">📷</button>
-                    </div>
-                </div>
-
-                <div class="col-6 col-md-3">
-                    <label class="form-label fw-semibold small">Categoría</label>
-                    <select name="categoria" class="form-select">
-                        <option value="">Todas las categorías</option>
-                        {% for cat in categorias %}
-                        <option value="{{ cat.id }}" {% if categoria_seleccionada == cat.id|stringformat:"s" %}selected{% endif %}>
-                            {{ cat.nombre }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="col-6 col-md-2 d-flex align-items-center">
-                    <div class="form-check mb-1">
-                        <input class="form-check-input" type="checkbox" name="favoritos" value="1" id="chkFavoritos"
-                               {% if solo_favoritos %}checked{% endif %}>
-                        <label class="form-check-label small" for="chkFavoritos">
-                            <i class="fas fa-star text-warning"></i> Solo favoritos
-                        </label>
-                    </div>
-                </div>
-
-                <div class="col-12 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-filter me-1"></i> Aplicar filtros
-                    </button>
-                    <a href="{% url 'bodeguero-reportes-ventas' %}" class="btn btn-outline-secondary" title="Limpiar todos los filtros">
-                        <i class="fas fa-redo me-1"></i>Limpiar
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Tarjetas de resumen -->
-    <div class="row g-3 mb-3">
-        <div class="col-6 col-md-3">
-            <div class="card shadow-sm text-center h-100">
-                <div class="card-body py-3">
-                    <div class="fs-2 fw-bold text-primary">{{ total_ventas_periodo|intcomma }}</div>
-                    <div class="text-muted small">Movimientos totales</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card shadow-sm text-center h-100">
-                <div class="card-body py-3">
-                    <div class="fs-2 fw-bold text-success">{{ total_unidades_periodo|floatformat:"0"|intcomma }}</div>
-                    <div class="text-muted small">Unidades despachadas</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card shadow-sm text-center h-100">
-                <div class="card-body py-3">
-                    <div class="fs-2 fw-bold text-warning">{{ dias_con_ventas|intcomma }}</div>
-                    <div class="text-muted small">Días con actividad</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card shadow-sm h-100">
-                <div class="card-body py-3">
-                    <div class="fw-semibold small text-muted mb-2">
-                        <i class="fas fa-trophy text-warning me-1"></i>Top productos
-                    </div>
-                    {% for tp in top_productos %}
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <small class="text-truncate me-2" style="max-width: 130px;" title="{{ tp.producto__nombre }}">
-                            {{ tp.producto__nombre }}
-                        </small>
-                        <span class="badge bg-primary rounded-pill">{{ tp.total_vendido|floatformat:"0"|intcomma }}</span>
-                    </div>
-                    {% empty %}
-                    <small class="text-muted">Sin datos en el período</small>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Corte de caja del período (dinero real recibido, por método de pago) -->
     <div class="mb-2">
         <span class="fw-semibold small text-muted">
-            <i class="fas fa-cash-register me-1"></i>Corte de caja del período seleccionado
+            <i class="fas fa-cash-register me-1"></i>
+            {% if corte_es_hoy %}Corte de hoy – {{ corte_fecha_hasta|date:"d M Y" }}
+            {% else %}Corte del {{ corte_fecha_desde|date:"d M Y" }} al {{ corte_fecha_hasta|date:"d M Y" }}{% endif %}
         </span>
     </div>
     <div class="row g-3 mb-4">
@@ -136,7 +35,7 @@
             <div class="card shadow-sm text-center h-100 border-success">
                 <div class="card-body py-3">
                     <div class="fs-2 fw-bold text-success">$ {{ corte_efectivo|floatformat:"0"|intcomma }}</div>
-                    <div class="text-muted small">Efectivo</div>
+                    <div class="text-muted small">Efectivo<br>Ingresos: ${{ corte_ingreso_efectivo|floatformat:"0"|intcomma }} | Egresos: ${{ corte_egreso_efectivo|floatformat:"0"|intcomma }}</div>
                 </div>
             </div>
         </div>
@@ -144,7 +43,7 @@
             <div class="card shadow-sm text-center h-100 border-info">
                 <div class="card-body py-3">
                     <div class="fs-2 fw-bold text-info">$ {{ corte_nequi|floatformat:"0"|intcomma }}</div>
-                    <div class="text-muted small">Nequi</div>
+                    <div class="text-muted small">Nequi<br>Ingresos: ${{ corte_ingreso_nequi|floatformat:"0"|intcomma }} | Egresos: ${{ corte_egreso_nequi|floatformat:"0"|intcomma }}</div>
                 </div>
             </div>
         </div>
@@ -152,7 +51,7 @@
             <div class="card shadow-sm text-center h-100 border-warning">
                 <div class="card-body py-3">
                     <div class="fs-2 fw-bold text-warning">$ {{ corte_bancolombia|floatformat:"0"|intcomma }}</div>
-                    <div class="text-muted small">Bancolombia</div>
+                    <div class="text-muted small">Bancolombia<br>Ingresos: ${{ corte_ingreso_bancolombia|floatformat:"0"|intcomma }} | Egresos: ${{ corte_egreso_bancolombia|floatformat:"0"|intcomma }}</div>
                 </div>
             </div>
         </div>
@@ -160,156 +59,75 @@
             <div class="card shadow-sm text-center h-100 border-danger">
                 <div class="card-body py-3">
                     <div class="fs-2 fw-bold text-danger">$ {{ corte_otros|floatformat:"0"|intcomma }}</div>
-                    <div class="text-muted small">Otros Bancos</div>
+                    <div class="text-muted small">Otros Bancos<br>Ingresos: ${{ corte_ingreso_otros|floatformat:"0"|intcomma }} | Egresos: ${{ corte_egreso_otros|floatformat:"0"|intcomma }}</div>
                 </div>
             </div>
         </div>
     </div>
     <div class="text-end mb-4">
-        <span class="fw-bold">Total recibido en el período: $ {{ corte_total|floatformat:"0"|intcomma }}</span>
+        <span class="fw-bold">Total: $ {{ corte_total|floatformat:"0"|intcomma }}</span>
     </div>
-
-    <!-- Historial por día (acordeón) -->
-    {% if dias_lista %}
-    <div class="card shadow-sm">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <span class="fw-semibold">
-                <i class="fas fa-calendar-alt me-2"></i>Detalle por día
-            </span>
-            <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-outline-secondary" onclick="expandirTodos()">
-                    <i class="fas fa-expand-alt me-1"></i>Expandir todo
-                </button>
-                <button class="btn btn-sm btn-outline-secondary" onclick="colapsarTodos()">
-                    <i class="fas fa-compress-alt me-1"></i>Colapsar todo
-                </button>
-            </div>
-        </div>
-
-        <div class="accordion accordion-flush" id="acordeonVentas">
+    <div class="row">
+        {% if dias_lista %}
             {% for dia in dias_lista %}
-            <div class="accordion-item">
-                <h2 class="accordion-header" id="heading-{{ forloop.counter }}">
-                    <button class="accordion-button {% if not forloop.first %}collapsed{% endif %} py-3"
-                            type="button"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#collapse-{{ forloop.counter }}"
-                            aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}">
-                        <div class="d-flex flex-column flex-md-row align-items-md-center gap-2 w-100 me-3">
-                            <!-- Fecha -->
-                            <div>
-                                <span class="fw-bold">
-                                    {{ dia.fecha|date:"l" }},
-                                    {{ dia.fecha|date:"d \d\e F \d\e Y" }}
-                                </span>
-                            </div>
-                            <!-- Corte de caja del día + contadores -->
-                            <div class="ms-md-auto d-flex flex-wrap gap-2 text-end">
-                                <span class="badge bg-success rounded-pill" title="Efectivo del día">
-                                    Efectivo $ {{ dia.corte_efectivo|floatformat:"0"|intcomma }}
-                                </span>
-                                <span class="badge bg-info rounded-pill" title="Nequi del día">
-                                    Nequi $ {{ dia.corte_nequi|floatformat:"0"|intcomma }}
-                                </span>
-                                <span class="badge bg-warning text-dark rounded-pill" title="Bancolombia del día">
-                                    Bancolombia $ {{ dia.corte_bancolombia|floatformat:"0"|intcomma }}
-                                </span>
-                                <span class="badge bg-danger rounded-pill" title="Otros bancos del día">
-                                    Otros $ {{ dia.corte_otros|floatformat:"0"|intcomma }}
-                                </span>
-                                <span class="badge bg-dark rounded-pill" title="Total del día">
-                                    Total $ {{ dia.corte_total|floatformat:"0"|intcomma }}
-                                </span>
-                                <span class="badge bg-primary rounded-pill">
-                                    {{ dia.total_items|intcomma }} mov.
-                                </span>
-                                <span class="badge bg-secondary rounded-pill">
-                                    {{ dia.total_unidades|floatformat:"0"|intcomma }} uds.
-                                </span>
-                            </div>
+                <div class="col-12 mb-3">
+                    <div class="card shadow-sm">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">{{ dia.fecha|date:"d M Y" }}</h5>
+                            <small class="text-muted">{{ dia.total_items }} ventas, {{ dia.total_unidades|floatformat:"0"|intcomma }} unidades</small>
                         </div>
-                    </button>
-                </h2>
-                <div id="collapse-{{ forloop.counter }}"
-                     class="accordion-collapse collapse {% if forloop.first %}show{% endif %}"
-                     data-bs-parent="">
-                    <div class="accordion-body p-0">
-                        <div class="table-responsive">
+                        <div class="card-body p-0">
                             <table class="table table-sm table-hover mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th class="ps-4">Hora</th>
                                         <th>Producto</th>
-                                        <th class="text-center">Cantidad</th>
-                                        <th class="text-center">Stock antes</th>
-                                        <th class="text-center">Stock después</th>
-                                        <th>Referencia</th>
-                                        <th>Usuario</th>
-                                        <th class="pe-4 text-center">Acción</th>
+                                        <th>Cantidad</th>
+                                        <th>Precio unitario</th>
+<th>Tipo</th>
+                                        <th>Método</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for mov in dia.movimientos %}
-                                    <tr>
-                                        <td class="ps-4 text-muted small">{{ mov.fecha|date:"H:i" }}</td>
-                                        <td class="fw-semibold">
-                                            {{ mov.producto.nombre }}
-                                            {% if mov.producto.favorito %}<i class="fas fa-star text-warning ms-1" title="Favorito"></i>{% endif %}
-                                        </td>
-                                        <td class="text-center">
-                                            <span class="badge bg-danger">- {{ mov.cantidad|floatformat:"-2"|intcomma }}</span>
-                                        </td>
-                                        <td class="text-center text-muted small">{{ mov.stock_antes|floatformat:"-2"|intcomma }}</td>
-                                        <td class="text-center text-muted small">{{ mov.stock_despues|floatformat:"-2"|intcomma }}</td>
-                                        <td class="small text-muted">
-                                            {{ mov.referencia|default:"—" }}
-                                        </td>
-                                        <td class="small text-muted">
-                                            {% if mov.usuario %}{{ mov.usuario.username }}{% else %}—{% endif %}
-                                        </td>
-                                        <td class="pe-4 text-center">
-                                            <button class="btn btn-sm btn-outline-danger"
-                                                    onclick="revertirVenta({{ mov.id }})"
-                                                    title="Revertir esta salida y devolver stock">
-                                                <i class="fas fa-undo me-1"></i>Revertir
-                                            </button>
-                                        </td>
-                                    </tr>
+                                        <tr>
+                                            <td>{{ mov.producto.nombre }}</td>
+                                            <td>{{ mov.cantidad|floatformat:"0"|intcomma }}</td>
+                                            <td>
+                                                {% if mov.tipo == 'E' %}
+                                                    ${{ mov.costo_unitario|floatformat:"0"|intcomma }}
+                                                {% elif mov.tipo == 'S' %}
+                                                    ${{ mov.precio_unitario_venta|floatformat:"0"|intcomma }}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ mov.get_tipo_display }}</td>
+                                            <td>{{ mov.get_payment_method_display }}</td>
+                                        </tr>
                                     {% endfor %}
                                 </tbody>
-                                <tfoot class="table-light">
-                                    <tr>
-                                        <td colspan="2" class="ps-4 fw-bold">Total del día</td>
-                                        <td class="text-center fw-bold text-danger">
-                                            {{ dia.total_unidades|floatformat:"0"|intcomma }} uds.
-                                        </td>
-                                        <td colspan="5"></td>
-                                    </tr>
-                                </tfoot>
                             </table>
+        {% if dia.ingresos_por_metodo %}
+        <div class="p-2">
+            <strong>Ingresos por método:</strong>
+            <ul class="list-inline mb-0">
+                <li class="list-inline-item">Efectivo: ${{ dia.ingresos_por_metodo.E|floatformat:"0"|intcomma }}</li>
+                <li class="list-inline-item">Nequi: ${{ dia.ingresos_por_metodo.N|floatformat:"0"|intcomma }}</li>
+                <li class="list-inline-item">Bancolombia: ${{ dia.ingresos_por_metodo.B|floatformat:"0"|intcomma }}</li>
+                <li class="list-inline-item">Otros: ${{ dia.ingresos_por_metodo.O|floatformat:"0"|intcomma }}</li>
+            </ul>
+        </div>
+        {% endif %}
                         </div>
                     </div>
                 </div>
-            </div>
             {% endfor %}
-        </div>
+        {% else %}
+            <p class="text-muted">No hay ventas en el período seleccionado.</p>
+        {% endif %}
     </div>
 
-    {% else %}
-    <!-- Estado vacío -->
-    <div class="card shadow-sm">
-        <div class="card-body text-center py-5 text-muted">
-            <i class="fas fa-chart-bar fa-3x mb-3 d-block opacity-25"></i>
-            <h5>No hay ventas registradas con estos filtros</h5>
-            <p class="mb-3">Prueba cambiando el rango de fechas o los filtros de búsqueda.</p>
-            <a href="{% url 'dashboard' %}" class="btn btn-primary">
-                <i class="fas fa-cash-register me-1"></i>Ir al Punto de Venta
-            </a>
-        </div>
-    </div>
-    {% endif %}
-
-</div>
+    
 
 <!-- Modal escáner de cámara para buscar producto en el reporte -->
 <div class="modal fade" id="modalEscanerReporte" tabindex="-1" aria-labelledby="modalEscanerReporteLabel" aria-hidden="true">
